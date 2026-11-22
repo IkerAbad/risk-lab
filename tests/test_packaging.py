@@ -1,6 +1,8 @@
+import inspect
 import tomllib
 from pathlib import Path
 
+import risk_lab
 from risk_lab import __version__
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -30,3 +32,15 @@ def test_py_typed_marker_is_present_and_declared():
     assert marker.exists()
     package_data = _pyproject()["tool"]["setuptools"]["package-data"]
     assert "py.typed" in package_data["risk_lab"]
+
+
+def test_all_exports_exist():
+    for name in risk_lab.__all__:
+        assert hasattr(risk_lab, name), name
+
+
+def test_public_functions_and_classes_have_docstrings():
+    for name in risk_lab.__all__:
+        obj = getattr(risk_lab, name)
+        if inspect.isfunction(obj) or inspect.isclass(obj):
+            assert inspect.getdoc(obj), f"{name} has no docstring"

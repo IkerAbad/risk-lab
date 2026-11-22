@@ -258,3 +258,15 @@ def test_main_rejects_inverted_dates(tmp_path):
                 str(tmp_path / "prices.csv"),
             ]
         )
+
+
+def test_parse_args_defaults():
+    args = download_data.parse_args([])
+    assert args.source == "auto"
+    assert args.years == 10
+    assert args.out.name == "prices.csv"
+
+
+def test_parse_args_accepts_a_source():
+    args = download_data.parse_args(["--source", "yahoo"])
+    assert args.source == "yahoo"

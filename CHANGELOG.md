@@ -3,6 +3,29 @@
 All notable changes to this project are documented in this file. The format
 follows Keep a Changelog and the project uses semantic versioning.
 
+## [0.2.2] - 2026-11-22
+
+### Added
+
+- Markdown link checker for all repository documentation.
+- Tests that compare the README main table and the 99% results table with the
+  committed CSV files.
+- Public API tests for `__all__` exports and docstrings.
+- CLI argument tests for both scripts.
+- Property tests for portfolio linearity in the weights and for a
+  `load_prices` roundtrip.
+- `scripts/check_all.py`, a one-command local quality gate that checks the
+  snapshot checksum, Ruff, mypy, Bandit and pytest.
+
+### Changed
+
+- 118 tests and 99.52% statement coverage.
+- Version bumped to 0.2.2.
+
+### Notes
+
+- No numerical result changes.
+
 ## [0.2.1] - 2026-11-22
 
 ### Added

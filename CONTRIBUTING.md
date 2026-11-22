@@ -19,6 +19,8 @@ python -m mypy src
 python -m bandit -r src scripts -q
 ```
 
+Or run the whole gate with `python scripts/check_all.py`.
+
 The CI runs the same checks on Ubuntu, Windows and macOS with Python 3.12 and
 3.14. A pull request is ready when all six jobs pass.
 

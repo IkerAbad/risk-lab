@@ -1,8 +1,10 @@
+import argparse
 import importlib.util
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -18,6 +20,7 @@ def _load_script(name: str):
 
 make_figures = _load_script("make_figures")
 make_extended = _load_script("make_extended_analysis")
+check_all = _load_script("check_all")
 
 
 def _write_prices(path: Path) -> None:
@@ -115,3 +118,51 @@ def test_extended_analysis_reports_a_clean_error(tmp_path, capsys):
     )
     assert code == 1
     assert "error:" in capsys.readouterr().err
+
+
+def test_make_figures_parse_args_defaults():
+    args = make_figures.parse_args([])
+    assert args.window == 500
+    assert args.level == 0.95
+    assert args.scenarios == 100_000
+    assert args.seed == 42
+
+
+def test_extended_analysis_parse_args_defaults():
+    args = make_extended.parse_args([])
+    assert args.levels == [0.95, 0.99]
+    assert args.windows == [250, 500, 750]
+    assert args.scenarios == 100_000
+
+
+def test_extended_analysis_rejects_invalid_levels():
+    with pytest.raises(argparse.ArgumentTypeError):
+        make_extended._levels("0.95,1.5")
+
+
+def test_extended_analysis_rejects_invalid_windows():
+    with pytest.raises(argparse.ArgumentTypeError):
+        make_extended._windows("0,500")
+
+
+def test_make_figures_reports_an_invalid_window(tmp_path, capsys):
+    data = tmp_path / "prices.csv"
+    docs = tmp_path / "docs"
+    _write_prices(data)
+    code = make_figures.main(
+        [
+            "--data",
+            str(data),
+            "--docs",
+            str(docs),
+            "--window",
+            "0",
+        ]
+    )
+    assert code == 1
+    assert "error:" in capsys.readouterr().err
+
+
+def test_check_all_verifies_the_committed_checksum(capsys):
+    assert check_all.verify_checksum() is True
+    assert "checksum: OK" in capsys.readouterr().out

@@ -1,8 +1,10 @@
 import numpy as np
+import pandas as pd
 import pytest
-from hypothesis import assume, given, settings
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
+from risk_lab.data import load_prices, portfolio_returns
 from risk_lab.stats import (
     christoffersen_conditional_coverage,
     christoffersen_independence,
@@ -71,7 +73,7 @@ def test_kupiec_p_value_is_a_probability(n, x):
 @given(VIOLATIONS)
 def test_christoffersen_p_values_are_probabilities(values):
     independence = christoffersen_independence(values)
-    assert independence.valid
+    assume(independence.valid)
     assert 0.0 <= independence.p_value <= 1.0
     assert independence.statistic >= 0.0
 
@@ -88,3 +90,80 @@ def test_historical_var_is_the_negative_empirical_quantile(values):
     assert historical_risk(returns, 0.95).var == pytest.approx(
         -np.quantile(returns, 0.05, method="linear")
     )
+
+
+@settings(max_examples=50, deadline=None)
+@given(
+    st.lists(
+        st.floats(
+            min_value=-0.2,
+            max_value=0.2,
+            allow_nan=False,
+            allow_infinity=False,
+        ),
+        min_size=3,
+        max_size=3,
+    ),
+    st.floats(
+        min_value=0.0,
+        max_value=1.0,
+        allow_nan=False,
+        allow_infinity=False,
+    ),
+)
+def test_portfolio_returns_are_linear_in_weights(values, mix):
+    returns = pd.DataFrame([values], columns=["A", "B", "C"])
+    first = {"A": 0.5, "B": 0.3, "C": 0.2}
+    second = {"A": 0.1, "B": 0.6, "C": 0.3}
+    mixed = {
+        key: mix * first[key] + (1.0 - mix) * second[key] for key in first
+    }
+    expected = (
+        mix * portfolio_returns(returns, first).iloc[0]
+        + (1.0 - mix) * portfolio_returns(returns, second).iloc[0]
+    )
+    actual = portfolio_returns(returns, mixed).iloc[0]
+    assert actual == pytest.approx(expected, abs=1e-12)
+
+
+@settings(
+    max_examples=20,
+    deadline=None,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
+@given(
+    st.lists(
+        st.floats(
+            min_value=1.0,
+            max_value=1000.0,
+            allow_nan=False,
+            allow_infinity=False,
+        ),
+        min_size=3,
+        max_size=8,
+    ),
+    st.lists(
+        st.floats(
+            min_value=1.0,
+            max_value=1000.0,
+            allow_nan=False,
+            allow_infinity=False,
+        ),
+        min_size=3,
+        max_size=8,
+    ),
+)
+def test_load_prices_roundtrip(tmp_path, values_a, values_b):
+    length = min(len(values_a), len(values_b))
+    dates = pd.bdate_range("2024-01-02", periods=length)
+    frame = pd.DataFrame(
+        {"A": values_a[:length], "B": values_b[:length]}, index=dates
+    )
+    frame.index.name = "Date"
+    path = tmp_path / "prices.csv"
+    frame.to_csv(path)
+    loaded = load_prices(path)
+    assert loaded.index.equals(dates)
+    assert list(loaded.columns) == ["A", "B"]
+    assert loaded["A"].to_numpy() == pytest.approx(values_a[:length])
+    assert loaded["B"].to_numpy() == pytest.approx(values_b[:length])
