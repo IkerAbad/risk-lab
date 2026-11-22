@@ -239,7 +239,8 @@ Interpretation:
   but fail independence. The historical model is close to failing
   unconditional coverage and also fails independence.
 - The historical method has the lowest average rolling VaR, 1.016% against
-  1.091% for the normal models. That is why it has six more violations.
+  1.091% for the normal models. That is consistent with its six more
+  violations.
 - The historical CVaR is higher on average, 1.564% against 1.378% for the
   normal models. The normal models underestimate the size of the tail losses.
 
