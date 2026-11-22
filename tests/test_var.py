@@ -6,6 +6,7 @@ from risk_lab.var import (
     historical_cvar,
     historical_risk,
     historical_var,
+    monte_carlo_cvar,
     monte_carlo_risk,
     monte_carlo_var,
     parametric_cvar,
@@ -150,3 +151,62 @@ def test_singular_covariance_raises():
             np.array([0.5, 0.5]),
             n_scenarios=100,
         )
+
+
+def test_simulate_portfolio_returns_single_asset():
+    returns = np.array([0.01, -0.02, 0.03, 0.00, -0.01])
+    simulated = simulate_portfolio_returns(
+        returns, [1.0], n_scenarios=100, seed=10
+    )
+    assert simulated.shape == (100,)
+    assert np.isfinite(simulated).all()
+
+
+def test_validate_weights_rejects_bad_shapes():
+    returns = np.ones((20, 2)) * np.array([0.01, -0.01])
+    with pytest.raises(ValueError, match="one-dimensional"):
+        simulate_portfolio_returns(returns, np.ones((2, 2)), n_scenarios=10)
+    with pytest.raises(ValueError, match="expected 2 weights"):
+        simulate_portfolio_returns(returns, [1.0], n_scenarios=10)
+    with pytest.raises(ValueError, match="finite"):
+        simulate_portfolio_returns(returns, [np.nan, 1.0], n_scenarios=10)
+    with pytest.raises(ValueError, match="non-negative"):
+        simulate_portfolio_returns(returns, [1.5, -0.5], n_scenarios=10)
+
+
+def test_monte_carlo_rejects_invalid_scenarios():
+    returns = np.array([0.01, -0.02, 0.03, 0.00, -0.01])
+    with pytest.raises(ValueError, match="integer"):
+        monte_carlo_risk(returns, [1.0], n_scenarios=True)
+    with pytest.raises(ValueError, match="integer"):
+        monte_carlo_risk(returns, [1.0], n_scenarios=100.0)
+    with pytest.raises(ValueError, match="positive"):
+        monte_carlo_risk(returns, [1.0], n_scenarios=0)
+
+
+def test_monte_carlo_rejects_invalid_returns():
+    with pytest.raises(ValueError, match="T x N"):
+        monte_carlo_risk(np.ones((2, 2, 2)), [0.5, 0.5], n_scenarios=10)
+    with pytest.raises(ValueError, match="at least two observations"):
+        monte_carlo_risk(np.ones((1, 2)), [0.5, 0.5], n_scenarios=10)
+    with pytest.raises(ValueError, match="at least one asset"):
+        monte_carlo_risk(np.ones((2, 0)), [1.0], n_scenarios=10)
+    with pytest.raises(ValueError, match="finite"):
+        monte_carlo_risk(
+            np.array([[0.01, np.nan], [0.02, 0.01]]),
+            [0.5, 0.5],
+            n_scenarios=10,
+        )
+
+
+def test_monte_carlo_rejects_invalid_level():
+    returns = np.array([0.01, -0.02, 0.03, 0.00, -0.01])
+    with pytest.raises(ValueError, match="between 0 and 1"):
+        monte_carlo_risk(returns, [1.0], level=0.0, n_scenarios=10)
+
+
+def test_monte_carlo_cvar_wrapper():
+    returns = np.array([0.01, -0.02, 0.03, 0.00, -0.01])
+    estimate = monte_carlo_risk(returns, [1.0], n_scenarios=1_000, seed=3)
+    wrapper = monte_carlo_cvar(returns, [1.0], n_scenarios=1_000, seed=3)
+    assert wrapper == pytest.approx(estimate.cvar)

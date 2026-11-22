@@ -17,7 +17,8 @@ network access.
 ```text
 risk-lab/
 ├── data/
-│   └── prices.csv
+│   ├── prices.csv
+│   └── prices.sha256
 ├── docs/
 │   ├── methodology.md
 │   ├── results.md
@@ -43,13 +44,18 @@ risk-lab/
 │   ├── test_var.py
 │   ├── test_backtest.py
 │   ├── test_stats.py
-│   └── test_plots.py
-├── .github/workflows/ci.yml
+│   ├── test_plots.py
+│   ├── test_download.py
+│   └── test_scripts.py
+├── .github/
+│   ├── workflows/ci.yml
+│   └── dependabot.yml
 ├── pyproject.toml
 ├── README.md
 ├── CONTRIBUTING.md
 ├── CHANGELOG.md
 ├── CITATION.cff
+├── SECURITY.md
 └── LICENSE
 ```
 
@@ -73,7 +79,7 @@ every day and pays no transaction costs.
 the intersection of US trading days. Missing calendar dates are non-trading
 days.
 
-SHA-256 of the committed CSV:
+SHA-256 of the committed CSV, also stored in `data/prices.sha256`:
 
 ```text
 d33a038e9b4460468ca195b2f7c9c3374ce062d1ff7cf75280f6a8e300e2e3a1
@@ -316,6 +322,7 @@ Carlo lines are nearly identical.
 - [CONTRIBUTING.md](CONTRIBUTING.md): setup, checks and how to add a method.
 - [CHANGELOG.md](CHANGELOG.md): version history.
 - [CITATION.cff](CITATION.cff): citation metadata.
+- [SECURITY.md](SECURITY.md): vulnerability reporting and scope.
 
 ## Reproduce
 
@@ -333,6 +340,7 @@ Run the tests and the static checks:
 python -m pytest -q --cov=risk_lab --cov-report=term-missing
 python -m ruff check .
 python -m mypy src
+python -m bandit -r src scripts -q
 ```
 
 Regenerate the figures and main tables from the committed CSV:
@@ -386,10 +394,10 @@ return, the three VaR and CVaR estimates, and the three violation flags.
 
 ## Tests
 
-The suite has 42 tests, one file per module:
+The suite has 85 tests, grouped by module and by script:
 
 - `tests/test_data.py`: price validation, simple and log returns, weighted
-  portfolio returns, weight validation.
+  portfolio returns, weight validation and the committed snapshot checksum.
 - `tests/test_var.py`: historical VaR against a hand-built empirical quantile,
   the parametric formula against μ + σ z, CVaR against a known tail mean, the
   normal CVaR closed form, Monte Carlo reproducibility with the same seed, and
@@ -400,15 +408,37 @@ The suite has 42 tests, one file per module:
   undefined-state behaviour.
 - `tests/test_backtest.py`: no lookahead, the violation flag, summary counts,
   the Monte Carlo path, yearly violation counts and argument validation.
-- `tests/test_plots.py`: both figures are written and missing columns are
-  rejected.
+- `tests/test_plots.py`: both figures are written, missing methods are skipped
+  and missing columns are rejected.
+- `tests/test_download.py`: Stooq and Yahoo parsing with mocked HTTP responses,
+  fallback behaviour, malformed payloads and the command-line error path.
+- `tests/test_scripts.py`: end-to-end runs of both scripts on synthetic data
+  and clean error handling when the input file is missing.
 
-The tests do not need network access. They use hand-built arrays and temporary
-files. The committed CSV is exercised by `scripts/make_figures.py`.
+The tests do not need network access. They use hand-built arrays, mocked HTTP
+responses and temporary files. The committed CSV is checked byte for byte
+against `data/prices.sha256`.
 
-CI runs on Ubuntu and Windows with Python 3.12 and 3.14. The workflow installs
-the package with the development extra, runs `ruff`, runs `mypy` and runs
-`pytest` with a 90% coverage threshold.
+CI runs on Ubuntu, Windows and macOS with Python 3.12 and 3.14. The workflow
+installs the package with the development extra, runs `ruff`, runs `mypy`, runs
+Bandit and runs `pytest` with a 99% coverage threshold.
+
+## Robustness
+
+- The committed CSV is checked against `data/prices.sha256` by the test suite.
+  A corrupted or accidentally regenerated snapshot fails the tests.
+- The suite has 85 tests and 99.5% statement coverage of `src/risk_lab`. CI
+  enforces a 99% threshold.
+- Every public function validates its inputs. The estimators reject empty
+  arrays, NaN, infinite values, invalid levels and bad weights.
+- The downloader has unit tests with mocked HTTP responses, so Stooq errors,
+  Yahoo errors and malformed payloads are tested without network access.
+- `make_figures.py` and `make_extended_analysis.py` return a non-zero exit code
+  and a one-line error message instead of a traceback.
+- CI runs `ruff`, `mypy`, Bandit and the test suite on Ubuntu, Windows and
+  macOS with Python 3.12 and 3.14.
+- Dependabot keeps the GitHub Actions and the Python dependencies current.
+- The repository is versioned with tags. The current release is `v0.2.0`.
 
 ## Limitations
 
@@ -507,6 +537,10 @@ cambios de régimen, la cartera es estática y no paga costes, y los tests
 asintóticos tienen poca potencia en muestras pequeñas. No se maquillan los
 resultados: a 95% y 500 días los tres métodos fallan la independencia, y a 99%
 el modelo normal falla Kupiec.
+
+Robustez: 85 tests, 99,5% de cobertura, comprobación del checksum del CSV, CI
+en Ubuntu, Windows y macOS con Python 3.12 y 3.14, ruff, mypy, bandit y
+Dependabot.
 
 Para reproducir todo:
 

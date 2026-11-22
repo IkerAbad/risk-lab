@@ -1,3 +1,6 @@
+import hashlib
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -10,6 +13,8 @@ from risk_lab.data import (
     portfolio_returns,
     weights_vector,
 )
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_default_weights_sum_to_one():
@@ -109,3 +114,49 @@ def test_portfolio_returns_keeps_index():
     assert portfolio.name == "portfolio"
     assert portfolio.index.equals(returns.index)
     assert portfolio.to_numpy() == pytest.approx(returns["A"].to_numpy())
+
+
+def test_committed_price_snapshot_is_intact():
+    data_path = ROOT / "data" / "prices.csv"
+    checksum_path = ROOT / "data" / "prices.sha256"
+    expected = checksum_path.read_text(encoding="utf-8").split()[0]
+    actual = hashlib.sha256(data_path.read_bytes()).hexdigest()
+    assert actual == expected
+
+    prices = load_prices(data_path)
+    assert list(prices.columns) == ["SPY", "TLT", "GLD"]
+    assert len(prices) == 2_513
+    assert prices.index.min() == pd.Timestamp("2016-11-22")
+    assert prices.index.max() == pd.Timestamp("2026-11-20")
+
+
+def test_load_prices_rejects_empty_file(tmp_path):
+    path = tmp_path / "prices.csv"
+    path.write_text("Date,SPY\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="empty"):
+        load_prices(path)
+
+
+def test_load_prices_rejects_infinite_values(tmp_path):
+    path = tmp_path / "prices.csv"
+    path.write_text(
+        "Date,SPY\n2024-01-02,inf\n2024-01-03,100.0\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="non-finite"):
+        load_prices(path)
+
+
+def test_compute_returns_rejects_empty_prices():
+    with pytest.raises(ValueError, match="prices are empty"):
+        compute_returns(pd.DataFrame())
+
+
+def test_weights_vector_rejects_non_finite_weights():
+    with pytest.raises(ValueError, match="finite"):
+        weights_vector(["A", "B"], {"A": float("nan"), "B": 1.0})
+
+
+def test_portfolio_returns_rejects_empty_returns():
+    with pytest.raises(ValueError, match="returns are empty"):
+        portfolio_returns(pd.DataFrame(), {"A": 1.0})

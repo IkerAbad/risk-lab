@@ -43,7 +43,8 @@ def _request(url: str, *, timeout: int = 30) -> bytes:
         url,
         headers={"User-Agent": USER_AGENT, "Accept": "*/*"},
     )
-    with urllib.request.urlopen(request, timeout=timeout) as response:
+    # The URL is built from fixed https endpoints, never from user input.
+    with urllib.request.urlopen(request, timeout=timeout) as response:  # nosec B310
         return response.read()
 
 
@@ -98,18 +99,22 @@ def fetch_yahoo(ticker: str, start: date, end: date) -> pd.Series:
     if chart.get("error"):
         raise DownloadError(f"Yahoo error for {ticker}: {chart['error']}")
     result = (chart.get("result") or [None])[0]
-    if not result or "timestamp" not in result:
+    if not result or not result.get("timestamp"):
         raise DownloadError(f"Yahoo returned no rows for {ticker}")
 
     timestamps = result["timestamp"]
     indicators = result.get("indicators", {})
-    adjusted = indicators.get("adjclose", [{}])[0].get("adjclose")
+    adjusted_blocks = indicators.get("adjclose") or []
+    adjusted = adjusted_blocks[0].get("adjclose") if adjusted_blocks else None
     if adjusted is None:
+        quote_blocks = indicators.get("quote") or []
+        adjusted = quote_blocks[0].get("close") if quote_blocks else None
+        if adjusted is None:
+            raise DownloadError(f"Yahoo has no price data for {ticker}")
         print(
             f"warning: Yahoo has no adjusted close for {ticker}, using close",
             file=sys.stderr,
         )
-        adjusted = indicators["quote"][0]["close"]
 
     index = pd.to_datetime(timestamps, unit="s", utc=True).normalize().tz_localize(None)
     series = pd.Series(adjusted, index=index, name=ticker, dtype=float)
@@ -201,7 +206,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         frame, used_source = _build_frame(start, end, args.source)
-    except (DownloadError, ValueError) as exc:
+    except (DownloadError, ValueError, KeyError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
 

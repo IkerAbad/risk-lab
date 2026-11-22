@@ -20,11 +20,11 @@ def load_prices(path: str | Path) -> pd.DataFrame:
     positive prices.
     """
     frame = pd.read_csv(path, parse_dates=["Date"], index_col="Date")
+    if frame.empty:
+        raise ValueError("price data is empty")
     if not isinstance(frame.index, pd.DatetimeIndex):
         raise ValueError("the Date column could not be parsed as dates")
     frame = frame.sort_index()
-    if frame.empty:
-        raise ValueError("price data is empty")
     if frame.index.has_duplicates:
         raise ValueError("price data contains duplicate dates")
     if frame.isna().any().any():

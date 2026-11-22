@@ -159,3 +159,54 @@ def test_backtest_validation():
         )
     with pytest.raises(ValueError, match="between 0 and 1"):
         rolling_backtest(returns, {"A": 1.0}, window=2, level=1.0)
+
+
+def test_rolling_backtest_rejects_bad_frames():
+    with pytest.raises(TypeError, match="DataFrame"):
+        rolling_backtest([1, 2, 3], {"A": 1.0})
+    with pytest.raises(ValueError, match="empty"):
+        rolling_backtest(pd.DataFrame(), {"A": 1.0})
+    with pytest.raises(ValueError, match="missing"):
+        rolling_backtest(_single_asset(np.array([0.01, np.nan, 0.02])), {"A": 1.0}, window=2)
+    with pytest.raises(ValueError, match="non-finite"):
+        rolling_backtest(_single_asset(np.array([0.01, np.inf, 0.02])), {"A": 1.0}, window=2)
+    with pytest.raises(ValueError, match="at least one"):
+        rolling_backtest(_single_asset(np.zeros(10)), {"A": 1.0}, window=2, methods=())
+    with pytest.raises(ValueError, match="integer"):
+        rolling_backtest(_single_asset(np.zeros(10)), {"A": 1.0}, window=True)
+
+
+def test_summarize_backtest_rejects_invalid_inputs():
+    with pytest.raises(ValueError, match="empty"):
+        summarize_backtest(pd.DataFrame())
+    frame = pd.DataFrame(
+        {"var_historical": [0.01], "violation_historical": [False]},
+        index=pd.date_range("2024-01-02", periods=1),
+    )
+    with pytest.raises(ValueError, match="between 0 and 1"):
+        summarize_backtest(frame, level=0.0)
+    with pytest.raises(ValueError, match="missing column"):
+        summarize_backtest(frame.drop(columns=["violation_historical"]))
+    no_methods = pd.DataFrame(
+        {"return": [0.0]},
+        index=pd.date_range("2024-01-02", periods=1),
+    )
+    with pytest.raises(ValueError, match="no method columns"):
+        summarize_backtest(no_methods)
+
+
+def test_violations_by_year_rejects_invalid_inputs():
+    with pytest.raises(ValueError, match="empty"):
+        violations_by_year(pd.DataFrame())
+    frame = pd.DataFrame(
+        {"violation_historical": [True]},
+        index=pd.date_range("2024-01-02", periods=1),
+    )
+    with pytest.raises(ValueError, match="between 0 and 1"):
+        violations_by_year(frame, level=0.0)
+    no_methods = pd.DataFrame(
+        {"return": [0.0]},
+        index=pd.date_range("2024-01-02", periods=1),
+    )
+    with pytest.raises(ValueError, match="no method columns"):
+        violations_by_year(no_methods)

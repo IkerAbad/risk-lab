@@ -97,3 +97,33 @@ def test_invalid_inputs_raise():
         christoffersen_independence([0, 1, 2])
     with pytest.raises(ValueError, match="at least two"):
         christoffersen_independence([0])
+
+
+def test_kupiec_requires_n_when_given_a_count():
+    with pytest.raises(ValueError, match="n must be supplied"):
+        kupiec_pof(5)
+
+
+def test_kupiec_rejects_zero_n():
+    with pytest.raises(ValueError, match="n must be positive"):
+        kupiec_pof(0, 0, 0.05)
+
+
+def test_kupiec_rejects_count_and_sequence_together():
+    with pytest.raises(ValueError, match="either a count or a sequence"):
+        kupiec_pof(np.array([0, 1]), 2, 0.05)
+
+
+def test_kupiec_rejects_negative_count():
+    with pytest.raises(ValueError, match="between 0 and n"):
+        kupiec_pof(-1, 10, 0.05)
+
+
+def test_violations_must_be_one_dimensional():
+    with pytest.raises(ValueError, match="one-dimensional"):
+        christoffersen_independence(np.array([[0, 1], [1, 0]]))
+
+
+def test_conditional_coverage_rejects_invalid_p0():
+    with pytest.raises(ValueError, match="between 0 and 1"):
+        christoffersen_conditional_coverage([0, 1], p0=0.0)

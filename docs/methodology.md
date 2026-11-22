@@ -38,7 +38,8 @@ splits and dividends. The downloader tries Stooq first. On 2026-11-22 the
 Stooq CSV endpoint returned `Access denied` from the author's network, both
 from Python and from a normal browser. The provenance note is in the README.
 The SHA-256 of the committed CSV is
-`d33a038e9b4460468ca195b2f7c9c3374ce062d1ff7cf75280f6a8e300e2e3a1`.
+`d33a038e9b4460468ca195b2f7c9c3374ce062d1ff7cf75280f6a8e300e2e3a1` and is also
+stored in `data/prices.sha256`.
 
 ## 3. Portfolio returns
 
