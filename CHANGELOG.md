@@ -3,6 +3,32 @@
 All notable changes to this project are documented in this file. The format
 follows Keep a Changelog and the project uses semantic versioning.
 
+## [0.2.0] - 2026-11-22
+
+### Added
+
+- Snapshot checksum `data/prices.sha256` and a test that verifies the exact
+  CSV bytes, the row count and the date range.
+- 85 tests, including downloader parsing with mocked HTTP, script integration
+  tests and the validation paths of every public function.
+- 99.5% statement coverage of `src/risk_lab`, enforced at 99% in CI.
+- Clean error messages in `make_figures.py` and `make_extended_analysis.py`.
+- Defensive guards in the Yahoo downloader for missing `adjclose`, `quote` and
+  timestamp fields.
+- Security scan with Bandit.
+- CI on macOS in addition to Ubuntu and Windows.
+- Dependabot for GitHub Actions and Python dependencies.
+- `SECURITY.md`, `CONTRIBUTING.md` and `CITATION.cff`.
+
+### Changed
+
+- `load_prices` reports an empty CSV before checking the index type.
+- Version bumped to 0.2.0.
+
+### Notes
+
+- No numerical result changes. The committed figures and tables are unchanged.
+
 ## [0.1.0] - 2026-11-22
 
 ### Added

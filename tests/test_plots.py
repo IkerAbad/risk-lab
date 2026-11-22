@@ -46,6 +46,16 @@ def test_plot_rolling_var_writes_file(tmp_path):
     plt.close(fig)
 
 
+def test_plot_rolling_var_skips_missing_methods(tmp_path):
+    backtest = _fake_backtest().drop(
+        columns=["var_parametric", "var_monte_carlo"]
+    )
+    path = tmp_path / "fig2_historical.png"
+    fig = plot_rolling_var(backtest, path=path)
+    assert path.exists()
+    plt.close(fig)
+
+
 def test_plot_returns_rejects_unknown_method():
     backtest = _fake_backtest()
     with pytest.raises(ValueError, match="unknown method"):

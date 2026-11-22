@@ -16,10 +16,11 @@ Run the full local check before opening a pull request:
 python -m pytest -q --cov=risk_lab --cov-report=term-missing
 python -m ruff check .
 python -m mypy src
+python -m bandit -r src scripts -q
 ```
 
-The CI runs the same checks on Ubuntu and Windows with Python 3.12 and 3.14.
-A pull request is ready when all four jobs pass.
+The CI runs the same checks on Ubuntu, Windows and macOS with Python 3.12 and
+3.14. A pull request is ready when all six jobs pass.
 
 ## Code style
 
@@ -51,7 +52,8 @@ A pull request is ready when all four jobs pass.
 The committed file is `data/prices.csv`. If you refresh it:
 
 1. Run `python scripts/download_data.py`.
-2. Update the SHA-256 in `README.md` and `docs/methodology.md`.
+2. Update the SHA-256 in `README.md`, `docs/methodology.md` and
+   `data/prices.sha256`.
 3. Re-run both scripts.
 4. Update every number in `README.md` and `docs/results.md`.
 5. State the data source and the download date in the commit message.
