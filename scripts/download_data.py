@@ -211,7 +211,11 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    frame.to_csv(args.out, float_format="%.8f", lineterminator="\n")
+    try:
+        frame.to_csv(args.out, float_format="%.8f", lineterminator="\n")
+    except OSError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
 
     first = frame.index.min().date()
     last = frame.index.max().date()

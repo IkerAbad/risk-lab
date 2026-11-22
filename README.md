@@ -22,6 +22,7 @@ risk-lab/
 ├── docs/
 │   ├── methodology.md
 │   ├── results.md
+│   ├── api.md
 │   ├── fig1_returns_violations.png
 │   ├── fig2_rolling_var.png
 │   ├── full_sample_risk.csv
@@ -46,7 +47,9 @@ risk-lab/
 │   ├── test_stats.py
 │   ├── test_plots.py
 │   ├── test_download.py
-│   └── test_scripts.py
+│   ├── test_scripts.py
+│   ├── test_properties.py
+│   └── test_packaging.py
 ├── .github/
 │   ├── workflows/ci.yml
 │   └── dependabot.yml
@@ -319,6 +322,7 @@ Carlo lines are nearly identical.
 - [docs/methodology.md](docs/methodology.md): estimation and testing details.
 - [docs/results.md](docs/results.md): full tables for 95%, 99%, windows and
   calendar years.
+- [docs/api.md](docs/api.md): public functions, arguments and error conditions.
 - [CONTRIBUTING.md](CONTRIBUTING.md): setup, checks and how to add a method.
 - [CHANGELOG.md](CHANGELOG.md): version history.
 - [CITATION.cff](CITATION.cff): citation metadata.
@@ -394,7 +398,7 @@ return, the three VaR and CVaR estimates, and the three violation flags.
 
 ## Tests
 
-The suite has 85 tests, grouped by module and by script:
+The suite has 103 tests, grouped by module and by script:
 
 - `tests/test_data.py`: price validation, simple and log returns, weighted
   portfolio returns, weight validation and the committed snapshot checksum.
@@ -414,6 +418,10 @@ The suite has 85 tests, grouped by module and by script:
   fallback behaviour, malformed payloads and the command-line error path.
 - `tests/test_scripts.py`: end-to-end runs of both scripts on synthetic data
   and clean error handling when the input file is missing.
+- `tests/test_properties.py`: Hypothesis checks for CVaR >= VaR, monotonicity
+  in the confidence level, the empirical quantile identity and p-value ranges.
+- `tests/test_packaging.py`: version consistency across `pyproject.toml`, the
+  package, `CITATION.cff` and `CHANGELOG.md`, plus the `py.typed` marker.
 
 The tests do not need network access. They use hand-built arrays, mocked HTTP
 responses and temporary files. The committed CSV is checked byte for byte
@@ -427,8 +435,12 @@ Bandit and runs `pytest` with a 99% coverage threshold.
 
 - The committed CSV is checked against `data/prices.sha256` by the test suite.
   A corrupted or accidentally regenerated snapshot fails the tests.
-- The suite has 85 tests and 99.5% statement coverage of `src/risk_lab`. CI
+- The suite has 103 tests and 99.5% statement coverage of `src/risk_lab`. CI
   enforces a 99% threshold.
+- Property-based tests cover the numerical invariants: CVaR is at least VaR,
+  VaR is monotone in the confidence level, the empirical VaR is the negative
+  quantile and every p-value is a probability.
+- The package ships a `py.typed` marker, so type checkers use its annotations.
 - Every public function validates its inputs. The estimators reject empty
   arrays, NaN, infinite values, invalid levels and bad weights.
 - The downloader has unit tests with mocked HTTP responses, so Stooq errors,
@@ -438,7 +450,7 @@ Bandit and runs `pytest` with a 99% coverage threshold.
 - CI runs `ruff`, `mypy`, Bandit and the test suite on Ubuntu, Windows and
   macOS with Python 3.12 and 3.14.
 - Dependabot keeps the GitHub Actions and the Python dependencies current.
-- The repository is versioned with tags. The current release is `v0.2.0`.
+- The repository is versioned with tags. The current release is `v0.2.1`.
 
 ## Limitations
 
@@ -538,9 +550,9 @@ asintóticos tienen poca potencia en muestras pequeñas. No se maquillan los
 resultados: a 95% y 500 días los tres métodos fallan la independencia, y a 99%
 el modelo normal falla Kupiec.
 
-Robustez: 85 tests, 99,5% de cobertura, comprobación del checksum del CSV, CI
-en Ubuntu, Windows y macOS con Python 3.12 y 3.14, ruff, mypy, bandit y
-Dependabot.
+Robustez: 103 tests, 99,5% de cobertura, tests de propiedades, comprobación
+del checksum del CSV, paquete con `py.typed`, CI en Ubuntu, Windows y macOS
+con Python 3.12 y 3.14, ruff, mypy, bandit y Dependabot.
 
 Para reproducir todo:
 

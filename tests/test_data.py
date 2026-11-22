@@ -130,6 +130,16 @@ def test_committed_price_snapshot_is_intact():
     assert prices.index.max() == pd.Timestamp("2026-11-20")
 
 
+def test_checksum_is_documented_in_the_repository():
+    checksum = (ROOT / "data" / "prices.sha256").read_text(
+        encoding="utf-8"
+    ).split()[0]
+    assert checksum in (ROOT / "README.md").read_text(encoding="utf-8")
+    assert checksum in (ROOT / "docs" / "methodology.md").read_text(
+        encoding="utf-8"
+    )
+
+
 def test_load_prices_rejects_empty_file(tmp_path):
     path = tmp_path / "prices.csv"
     path.write_text("Date,SPY\n", encoding="utf-8")

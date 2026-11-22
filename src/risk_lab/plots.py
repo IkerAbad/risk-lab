@@ -19,6 +19,19 @@ METHOD_COLORS: dict[str, str] = {
 }
 
 
+def _validate_backtest(backtest: pd.DataFrame, level: float) -> None:
+    if not isinstance(backtest, pd.DataFrame):
+        raise TypeError("backtest must be a pandas DataFrame")
+    if backtest.empty:
+        raise ValueError("backtest is empty")
+    if not isinstance(backtest.index, pd.DatetimeIndex):
+        raise ValueError("backtest index must be a DatetimeIndex")
+    if "return" not in backtest.columns:
+        raise ValueError("backtest is missing the return column")
+    if not 0.0 < float(level) < 1.0:
+        raise ValueError("level must be strictly between 0 and 1")
+
+
 def _save(fig: plt.Figure, path: str | Path | None) -> None:
     if path is not None:
         destination = Path(path)
@@ -37,6 +50,7 @@ def plot_returns_with_violations(
     """Plot portfolio returns and mark VaR violations."""
     if method not in METHOD_LABELS:
         raise ValueError(f"unknown method: {method}")
+    _validate_backtest(backtest, level)
     var_column = f"var_{method}"
     violation_column = f"violation_{method}"
     if var_column not in backtest.columns or violation_column not in backtest.columns:
@@ -89,6 +103,7 @@ def plot_rolling_var(
     figsize: tuple[float, float] = (11.0, 4.5),
 ) -> plt.Figure:
     """Plot realized daily loss against rolling VaR from the three methods."""
+    _validate_backtest(backtest, level)
     fig, ax = plt.subplots(figsize=figsize)
     ax.plot(
         backtest.index,

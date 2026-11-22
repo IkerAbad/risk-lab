@@ -224,3 +224,37 @@ def test_main_reports_a_clean_error(monkeypatch, tmp_path, capsys):
     )
     assert code == 1
     assert "error:" in capsys.readouterr().err
+
+
+def test_main_reports_a_write_error(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(download_data, "fetch_yahoo", _fake_yahoo)
+    code = download_data.main(
+        [
+            "--source",
+            "yahoo",
+            "--start",
+            "2024-01-02",
+            "--end",
+            "2024-01-03",
+            "--out",
+            str(tmp_path),
+        ]
+    )
+    assert code == 1
+    assert "error:" in capsys.readouterr().err
+
+
+def test_main_rejects_inverted_dates(tmp_path):
+    with pytest.raises(SystemExit, match="must not be after"):
+        download_data.main(
+            [
+                "--source",
+                "yahoo",
+                "--start",
+                "2024-01-03",
+                "--end",
+                "2024-01-02",
+                "--out",
+                str(tmp_path / "prices.csv"),
+            ]
+        )

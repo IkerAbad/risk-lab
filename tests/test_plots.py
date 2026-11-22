@@ -66,3 +66,33 @@ def test_plot_returns_rejects_missing_columns():
     backtest = _fake_backtest().drop(columns=["var_historical"])
     with pytest.raises(ValueError, match="missing"):
         plot_returns_with_violations(backtest)
+
+
+def test_plot_rejects_empty_backtest():
+    with pytest.raises(ValueError, match="empty"):
+        plot_returns_with_violations(pd.DataFrame())
+    with pytest.raises(ValueError, match="empty"):
+        plot_rolling_var(pd.DataFrame())
+
+
+def test_plot_rejects_non_dataframe():
+    with pytest.raises(TypeError, match="DataFrame"):
+        plot_rolling_var("not a frame")
+
+
+def test_plot_rejects_non_datetime_index():
+    backtest = _fake_backtest().reset_index(drop=True)
+    with pytest.raises(ValueError, match="DatetimeIndex"):
+        plot_rolling_var(backtest)
+
+
+def test_plot_rejects_missing_return_column():
+    backtest = _fake_backtest().drop(columns=["return"])
+    with pytest.raises(ValueError, match="return column"):
+        plot_rolling_var(backtest)
+
+
+def test_plot_rejects_invalid_level():
+    backtest = _fake_backtest()
+    with pytest.raises(ValueError, match="between 0 and 1"):
+        plot_rolling_var(backtest, level=0.0)

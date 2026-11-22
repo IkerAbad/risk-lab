@@ -3,6 +3,29 @@
 All notable changes to this project are documented in this file. The format
 follows Keep a Changelog and the project uses semantic versioning.
 
+## [0.2.1] - 2026-11-22
+
+### Added
+
+- Hypothesis property tests for CVaR >= VaR, monotonicity in the confidence
+  level, the empirical quantile identity and p-value ranges.
+- Plot input validation for empty frames, non-datetime indexes, missing return
+  columns and invalid levels.
+- PEP 561 `py.typed` marker and package-data declaration.
+- Packaging classifiers and keywords.
+- API reference in `docs/api.md`.
+- Test that the documented SHA-256 matches `data/prices.sha256`.
+- Downloader write-error handling and its tests.
+
+### Changed
+
+- 103 tests and 99.52% statement coverage.
+- Version bumped to 0.2.1.
+
+### Notes
+
+- No numerical result changes.
+
 ## [0.2.0] - 2026-11-22
 
 ### Added

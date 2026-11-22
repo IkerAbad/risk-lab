@@ -4,13 +4,29 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "risk-lab"
-version = "0.2.0"
+version = "0.2.1"
 description = "One-day VaR and CVaR with a rolling backtest for a three-asset portfolio."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Iker Abad" }]
+keywords = [
+    "value at risk",
+    "cvar",
+    "backtesting",
+    "quantitative finance",
+    "risk management",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Office/Business :: Financial :: Investment",
+]
 dependencies = [
     "numpy>=1.26",
     "scipy>=1.11",
@@ -22,6 +38,7 @@ dependencies = [
 dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",
+    "hypothesis>=6.100",
     "ruff>=0.6",
     "mypy>=1.10",
     "bandit>=1.8",
@@ -32,6 +49,9 @@ Homepage = "https://github.com/IkerAbad/risk-lab"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+risk_lab = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
