@@ -35,14 +35,15 @@ def test_historical_cvar_matches_tail_mean():
     assert estimate.cvar == pytest.approx(0.09)
 
 
-def test_parametric_var_matches_normal_quantile():
+def test_parametric_var_is_the_negative_normal_quantile():
     returns = np.array([-0.03, -0.02, -0.01, 0.00, 0.01])
     mu = returns.mean()
     sigma = returns.std(ddof=1)
     z = norm.ppf(0.05)
-    expected = -(mu + sigma * z)
-    assert parametric_var(returns, 0.95) == pytest.approx(expected)
-    assert expected == pytest.approx(0.03600741939377788)
+    quantile = mu + sigma * z
+    assert parametric_var(returns, 0.95) == pytest.approx(-quantile)
+    assert quantile == pytest.approx(-0.03600741939377788)
+    assert -quantile == pytest.approx(0.03600741939377788)
 
 
 def test_parametric_cvar_matches_closed_form():
