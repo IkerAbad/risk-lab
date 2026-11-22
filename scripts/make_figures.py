@@ -157,6 +157,8 @@ def main(argv: list[str] | None = None) -> int:
                 "kupiec_p": formatter,
                 "christoffersen_lr": formatter,
                 "christoffersen_p": formatter,
+                "conditional_lr": formatter,
+                "conditional_p": formatter,
             }
         )
     )

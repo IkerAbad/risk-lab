@@ -27,7 +27,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
+      - name: Lint
+        run: python -m ruff check .
+      - name: Type check
+        run: python -m mypy src
       - name: Test
-        run: python -m pytest -q
+        run: python -m pytest -q --cov=risk_lab --cov-report=term-missing
       - name: Pipeline smoke test
         run: python scripts/make_figures.py --scenarios 1000 --docs "${{ runner.temp }}/risk-lab-docs"
+      - name: Extended analysis smoke test
+        run: python scripts/make_extended_analysis.py --scenarios 1000 --docs "${{ runner.temp }}/risk-lab-extended"

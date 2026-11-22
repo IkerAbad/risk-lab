@@ -8,7 +8,11 @@ import numpy as np
 import pandas as pd
 
 from .data import portfolio_returns, weights_vector
-from .stats import christoffersen_independence, kupiec_pof
+from .stats import (
+    christoffersen_conditional_coverage,
+    christoffersen_independence,
+    kupiec_pof,
+)
 from .var import (
     historical_risk,
     monte_carlo_risk,
@@ -150,6 +154,7 @@ def summarize_backtest(
         count = int(violations.sum())
         kupiec = kupiec_pof(count, n, p0)
         independence = christoffersen_independence(violations)
+        conditional = christoffersen_conditional_coverage(violations, p0)
 
         rows.append(
             {
@@ -162,9 +167,47 @@ def summarize_backtest(
                 "kupiec_p": kupiec.p_value,
                 "christoffersen_lr": independence.statistic,
                 "christoffersen_p": independence.p_value,
+                "conditional_lr": conditional.statistic,
+                "conditional_p": conditional.p_value,
             }
         )
 
     if not rows:
         raise ValueError("backtest has no method columns")
     return pd.DataFrame(rows).set_index("method")
+
+
+def violations_by_year(
+    backtest: pd.DataFrame, *, level: float = 0.95
+) -> pd.DataFrame:
+    """Count violations by calendar year for every method in the backtest.
+
+    The result is indexed by ``method`` and ``year`` and contains the number
+    of observations, violations, expected violations and the violation rate.
+    """
+    if backtest.empty:
+        raise ValueError("backtest is empty")
+    if not isinstance(backtest.index, pd.DatetimeIndex):
+        raise ValueError("backtest index must be a DatetimeIndex")
+    if not 0.0 < float(level) < 1.0:
+        raise ValueError("level must be strictly between 0 and 1")
+
+    years = backtest.index.year.to_numpy()
+    rows: list[pd.DataFrame] = []
+    for method in METHODS:
+        violation_column = f"violation_{method}"
+        if violation_column not in backtest.columns:
+            continue
+        grouped = backtest.groupby(years)[violation_column].agg(["count", "sum"])
+        grouped = grouped.rename(
+            columns={"count": "observations", "sum": "violations"}
+        )
+        grouped["expected"] = grouped["observations"] * (1.0 - float(level))
+        grouped["rate"] = grouped["violations"] / grouped["observations"]
+        grouped["method"] = method
+        grouped = grouped.reset_index().rename(columns={"index": "year"})
+        rows.append(grouped)
+
+    if not rows:
+        raise ValueError("backtest has no method columns")
+    return pd.concat(rows, ignore_index=True).set_index(["method", "year"])

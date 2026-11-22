@@ -2,7 +2,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from risk_lab.backtest import rolling_backtest, summarize_backtest
+from risk_lab.backtest import (
+    rolling_backtest,
+    summarize_backtest,
+    violations_by_year,
+)
 
 
 def _single_asset(values: np.ndarray) -> pd.DataFrame:
@@ -85,6 +89,32 @@ def test_summary_table_counts_and_expected_values():
     assert summary.loc["historical", "violation_rate"] == pytest.approx(0.05)
     assert summary.loc["historical", "kupiec_p"] == pytest.approx(1.0)
     assert np.isfinite(summary.loc["parametric", "christoffersen_p"])
+    assert np.isfinite(summary.loc["parametric", "conditional_p"])
+
+
+def test_violations_by_year_counts():
+    index = pd.to_datetime(
+        ["2024-12-30", "2024-12-31", "2025-01-02", "2025-01-03"]
+    )
+    backtest = pd.DataFrame(
+        {
+            "violation_historical": [True, False, True, True],
+            "violation_parametric": [False, False, True, False],
+        },
+        index=index,
+    )
+    result = violations_by_year(backtest, level=0.95)
+    assert result.loc[("historical", 2024), "observations"] == 2
+    assert result.loc[("historical", 2024), "violations"] == 1
+    assert result.loc[("historical", 2024), "expected"] == pytest.approx(0.1)
+    assert result.loc[("historical", 2025), "violations"] == 2
+    assert result.loc[("parametric", 2025), "violations"] == 1
+
+
+def test_violations_by_year_requires_a_datetime_index():
+    backtest = pd.DataFrame({"violation_historical": [True, False]})
+    with pytest.raises(ValueError, match="DatetimeIndex"):
+        violations_by_year(backtest)
 
 
 def test_monte_carlo_backtest_smoke():

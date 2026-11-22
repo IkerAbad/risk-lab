@@ -1,7 +1,8 @@
 # risk-lab
 
 One-day Value at Risk (VaR) and Conditional Value at Risk (CVaR) for a fixed
-three-asset portfolio, with a 500-day rolling backtest and coverage tests.
+three-asset portfolio, with rolling backtests at 95% and 99%, coverage tests
+and a reproducible data snapshot.
 
 Author: Iker Abad (GitHub: [IkerAbad](https://github.com/IkerAbad))
 
@@ -18,14 +19,19 @@ risk-lab/
 ├── data/
 │   └── prices.csv
 ├── docs/
+│   ├── methodology.md
+│   ├── results.md
 │   ├── fig1_returns_violations.png
 │   ├── fig2_rolling_var.png
 │   ├── full_sample_risk.csv
 │   ├── backtest_summary.csv
-│   └── backtest_series.csv
+│   ├── backtest_series.csv
+│   ├── sensitivity.csv
+│   └── violations_by_year.csv
 ├── scripts/
 │   ├── download_data.py
-│   └── make_figures.py
+│   ├── make_figures.py
+│   └── make_extended_analysis.py
 ├── src/risk_lab/
 │   ├── data.py
 │   ├── var.py
@@ -41,6 +47,9 @@ risk-lab/
 ├── .github/workflows/ci.yml
 ├── pyproject.toml
 ├── README.md
+├── CONTRIBUTING.md
+├── CHANGELOG.md
+├── CITATION.cff
 └── LICENSE
 ```
 
@@ -101,8 +110,8 @@ and CVaR figures in this repository are reported as positive losses. A VaR of
 0.0103 means a one-day loss of 1.03% of portfolio value. The return quantile
 is -VaR.
 
-The confidence level is α = 0.95. The estimation window has 500 daily
-observations.
+The main analysis uses α = 0.95 and a 500-day window. The extended analysis
+uses α = 0.99 and windows of 250, 500 and 750 days.
 
 ### Historical
 
@@ -191,6 +200,18 @@ Under the null, LR_ind is asymptotically χ²(1). The p-value is
 the test is undefined and the implementation returns a NaN p-value instead of
 inventing one.
 
+### Christoffersen conditional coverage test
+
+The joint test combines correct unconditional coverage and independence:
+
+```text
+LR_cc = LR_uc + LR_ind
+```
+
+Under the null, LR_cc is asymptotically χ²(2). The p-value is
+`chi2.sf(LR_cc, 2)`. If the independence component is undefined, the joint test
+is undefined and the p-value is NaN.
+
 All p-values are computed with SciPy. None are typed in from a table.
 
 ## Results
@@ -213,11 +234,11 @@ normal one, while the average loss beyond it is larger.
 
 ### Rolling backtest
 
-| Method | Violations | Expected | Rate | Kupiec LR | Kupiec p | Christoffersen LR | Christoffersen p |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| Historical | 120 | 100.6 | 5.96% | 3.719 | 0.0538 | 9.865 | 0.00168 |
-| Parametric | 114 | 100.6 | 5.67% | 1.805 | 0.1791 | 12.127 | 0.000497 |
-| Monte Carlo | 114 | 100.6 | 5.67% | 1.805 | 0.1791 | 12.127 | 0.000497 |
+| Method | Violations | Expected | Rate | Kupiec LR | Kupiec p | Christoffersen LR | Christoffersen p | Conditional p |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Historical | 120 | 100.6 | 5.96% | 3.719 | 0.0538 | 9.865 | 0.00168 | 0.00112 |
+| Parametric | 114 | 100.6 | 5.67% | 1.805 | 0.1791 | 12.127 | 0.000497 | 0.000944 |
+| Monte Carlo | 114 | 100.6 | 5.67% | 1.805 | 0.1791 | 12.127 | 0.000497 | 0.000944 |
 
 The Monte Carlo and parametric rows are identical after rounding because both
 models assume the same multivariate normal distribution. The Monte Carlo
@@ -233,19 +254,45 @@ Interpretation:
   5% level. The historical method is borderline at p = 0.0538 and its observed
   rate is 5.96%, above the nominal 5%.
 - Christoffersen rejects independence for all three methods. The p-values are
-  0.00168, 0.000497 and 0.000497. The violations cluster in time. The models
-  react too slowly to changes in volatility.
-- No method passes both tests. The normal models pass unconditional coverage
-  but fail independence. The historical model is close to failing
-  unconditional coverage and also fails independence.
+  0.00168, 0.000497 and 0.000497. The violations cluster in time, which is
+  consistent with the models reacting too slowly to changes in volatility.
+- The joint conditional coverage test also rejects all three methods, with
+  p-values 0.00112, 0.000944 and 0.000944.
+- No method passes all three tests. The normal models pass unconditional
+  coverage but fail independence and conditional coverage. The historical
+  model is close to failing unconditional coverage and also fails independence
+  and conditional coverage.
 - The historical method has the lowest average rolling VaR, 1.016% against
   1.091% for the normal models. That is consistent with its six more
   violations.
 - The historical CVaR is higher on average, 1.564% against 1.378% for the
   normal models. The normal models underestimate the size of the tail losses.
 
-The independence rejections survive a Bonferroni correction for six tests at
-the 5% level, whose threshold is 0.00833. They do not disappear after rounding.
+The independence rejections survive a Bonferroni correction for the six
+Kupiec and independence tests at the 5% level, whose threshold is 0.00833.
+They do not disappear after rounding.
+
+### Extended analysis
+
+The full tables are in [docs/results.md](docs/results.md). The key results:
+
+- At 99% with the 500-day window, the normal model has 40 violations against
+  20.1 expected. Kupiec p = 8.64e-05. The historical model has 24 against 20.1,
+  Kupiec p = 0.3988, but Christoffersen p = 0.00227. The normal tail is too
+  thin.
+- At 95%, the 750-day normal model is the only combination that passes
+  Kupiec, Christoffersen and conditional coverage. It has 96 violations
+  against 88.1 expected, Kupiec p = 0.3944, Christoffersen p = 0.1040 and
+  conditional p = 0.1856. The 250-day and 500-day normal models fail
+  independence. The window length matters.
+- The yearly table shows the clustering. In 2022, the historical method has
+  31 violations out of 251 forecasts (12.35%) and the normal model 37 (14.74%).
+  In 2023, all methods have 5 out of 250 (2.00%).
+- The 750-day pass is exploratory. It was selected after looking at the
+  results and is not corrected for multiple testing.
+
+The yearly counts are in `docs/violations_by_year.csv`. The full sensitivity
+table is `docs/sensitivity.csv`.
 
 ### Figures
 
@@ -261,6 +308,15 @@ Figure 2: realized daily loss against the rolling VaR from the three methods.
 The historical VaR is usually the lowest of the three. The parametric and Monte
 Carlo lines are nearly identical.
 
+## Documentation
+
+- [docs/methodology.md](docs/methodology.md): estimation and testing details.
+- [docs/results.md](docs/results.md): full tables for 95%, 99%, windows and
+  calendar years.
+- [CONTRIBUTING.md](CONTRIBUTING.md): setup, checks and how to add a method.
+- [CHANGELOG.md](CHANGELOG.md): version history.
+- [CITATION.cff](CITATION.cff): citation metadata.
+
 ## Reproduce
 
 Create an environment and install the package:
@@ -271,13 +327,15 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 python -m pip install -e ".[dev]"
 ```
 
-Run the tests:
+Run the tests and the static checks:
 
 ```bash
-python -m pytest -q
+python -m pytest -q --cov=risk_lab --cov-report=term-missing
+python -m ruff check .
+python -m mypy src
 ```
 
-Regenerate the figures and tables from the committed CSV:
+Regenerate the figures and main tables from the committed CSV:
 
 ```bash
 python scripts/make_figures.py
@@ -291,6 +349,17 @@ committed tables:
 ```bash
 python scripts/make_figures.py --scenarios 10000
 ```
+
+Regenerate the extended analysis with the 95% and 99% levels and the 250, 500
+and 750-day windows:
+
+```bash
+python scripts/make_extended_analysis.py
+```
+
+This runs six backtests with 100,000 scenarios each. It took about 63 seconds
+on the machine used to build the snapshot and writes `docs/sensitivity.csv` and
+`docs/violations_by_year.csv`.
 
 Refresh the price snapshot (needs network access):
 
@@ -309,13 +378,15 @@ The pipeline writes:
 - `docs/full_sample_risk.csv`
 - `docs/backtest_summary.csv`
 - `docs/backtest_series.csv`
+- `docs/sensitivity.csv`
+- `docs/violations_by_year.csv`
 
 `backtest_series.csv` contains one row per forecast date, with the realized
 return, the three VaR and CVaR estimates, and the three violation flags.
 
 ## Tests
 
-The suite has 38 tests, one file per module:
+The suite has 42 tests, one file per module:
 
 - `tests/test_data.py`: price validation, simple and log returns, weighted
   portfolio returns, weight validation.
@@ -325,9 +396,10 @@ The suite has 38 tests, one file per module:
   input validation.
 - `tests/test_stats.py`: Kupiec with N = 250, x = 10 and p0 = 0.05, whose
   p-value is checked to 1e-6 against 0.4529124499351952, plus a known
-  Christoffersen case and the undefined-state behaviour.
+  Christoffersen independence case, a known conditional coverage case and the
+  undefined-state behaviour.
 - `tests/test_backtest.py`: no lookahead, the violation flag, summary counts,
-  the Monte Carlo path and argument validation.
+  the Monte Carlo path, yearly violation counts and argument validation.
 - `tests/test_plots.py`: both figures are written and missing columns are
   rejected.
 
@@ -335,29 +407,35 @@ The tests do not need network access. They use hand-built arrays and temporary
 files. The committed CSV is exercised by `scripts/make_figures.py`.
 
 CI runs on Ubuntu and Windows with Python 3.12 and 3.14. The workflow installs
-the package with the development extra and runs `pytest`.
+the package with the development extra, runs `ruff`, runs `mypy` and runs
+`pytest` with a 90% coverage threshold.
 
 ## Limitations
 
 - The parametric and Monte Carlo methods assume multivariate normality. The
   data have a fatter left tail. The full-sample empirical CVaR is 1.574%
   against 1.349% for the normal model, so the normal model understates the
-  average tail loss by 0.225 percentage points.
-- The 500-day window is fixed. It does not adapt to regime changes. The
-  Christoffersen rejections are direct evidence that the violations cluster.
-  An exponentially weighted or GARCH-based volatility model would react
-  faster, but it would also add parameters and estimation risk.
+  average tail loss by 0.225 percentage points. At 99%, the normal model
+  produces about twice the expected number of violations at every window and
+  Kupiec rejects it.
+- The main window is fixed at 500 days. It does not adapt to regime changes.
+  The 750-day normal model passes all three tests at 95%, so the window length
+  matters. That pass was selected after inspecting the results and is
+  exploratory, not a validated production choice. An exponentially weighted or
+  GARCH-based volatility model would react faster, but it would add parameters
+  and estimation risk.
 - The portfolio is static. Weights are rebalanced daily to 50/35/15 with no
   transaction costs, no taxes and no liquidity constraints. A real portfolio
   would drift between rebalances and pay to trade.
 - The sample is one path of history. The backtest has 2,012 forecasts, which
   is enough to detect large coverage errors but not enough for precise tail
-  estimates at 99%.
+  estimates at 99%, where the expected count is about 20.
 - The tests are asymptotic. Kupiec and Christoffersen have low power in small
-  samples. The independence test only checks first-order Markov dependence. It
-  does not test a full conditional coverage model.
-- Only the 95% level is backtested. The code accepts other levels, but the
-  committed tables and figures use 95%.
+  samples. The independence test only checks first-order Markov dependence.
+  The conditional coverage test combines Kupiec and first-order independence,
+  but it does not model higher-order dependence or covariates.
+- The figures use the 95% level. The extended analysis also backtests 99%, but
+  the figures are not redrawn at that level.
 - VaR is not subadditive and can penalize diversification. CVaR is coherent.
   The report shows both.
 - The committed data come from Yahoo Finance, not Stooq, because the Stooq CSV
@@ -368,9 +446,10 @@ the package with the development extra and runs `pytest`.
 - Monte Carlo does not add model diversity here. It simulates the same normal
   model as the parametric method, so the two sets of results are nearly
   identical. The simulation only adds sampling noise.
-- No multiple-testing correction is applied to the main table. The three
-  independence rejections survive a Bonferroni threshold of 0.00833 for six
-  tests, so the qualitative conclusion does not depend on that correction.
+- No multiple-testing correction is applied. The main table has nine tests and
+  the sensitivity analysis has 18 method-window-level combinations. The
+  750-day pass is exploratory. The 99% rejections are strong enough that a
+  multiple-testing correction does not change the conclusion.
 
 ## License
 
@@ -381,8 +460,10 @@ MIT. See `LICENSE`.
 Este repositorio calcula el VaR y el CVaR a un día de una cartera fija de SPY,
 TLT y GLD con pesos 50/35/15. Usa tres métodos: histórico, paramétrico normal
 y Monte Carlo multivariante con 100.000 escenarios y semilla fija. El backtest
-es rolling, con una ventana de 500 días, reestimación diaria y predicción a un
-día. La muestra tiene 2.012 predicciones, del 19/11/2018 al 20/11/2026.
+principal es rolling, con una ventana de 500 días, reestimación diaria y
+predicción a un día. La muestra tiene 2.012 predicciones, del 19/11/2018 al
+20/11/2026. El análisis extendido añade el nivel 99% y ventanas de 250, 500 y
+750 días.
 
 Los datos versionados en el repositorio son cierres ajustados de Yahoo
 Finance, no de Stooq. La descarga CSV de Stooq devolvió `Access denied` el
@@ -396,25 +477,36 @@ Resultados reales:
   1,068% y el de Monte Carlo 1,076%. El CVaR histórico es 1,574%, frente a
   1,349% del paramétrico y 1,353% del Monte Carlo. La cola empírica es más
   pesada que la normal.
-- En el backtest, el método histórico tiene 120 violaciones frente a 100,6
-  esperadas. Kupiec da p = 0,0538, justo por encima del 5%. Christoffersen da
-  p = 0,00168 y rechaza la independencia.
+- En el backtest principal, el método histórico tiene 120 violaciones frente a
+  100,6 esperadas. Kupiec da p = 0,0538, justo por encima del 5%.
+  Christoffersen da p = 0,00168 y rechaza la independencia. El test condicional
+  conjunto da p = 0,00112.
 - Los métodos paramétrico y Monte Carlo tienen 114 violaciones. Kupiec da
-  p = 0,1791 y no rechaza la cobertura. Christoffersen da p = 0,000497 y
-  rechaza la independencia.
-- Ningún método pasa los dos tests. Los tres fallan el test de independencia.
-  Las violaciones se agrupan en el tiempo porque la ventana fija reacciona
-  despacio a los cambios de volatilidad.
+  p = 0,1791 y no rechaza la cobertura. Christoffersen da p = 0,000497 y el
+  test condicional p = 0,000944. Los tres rechazan la independencia.
+- Ningún método pasa los tres tests. Las violaciones se agrupan en el tiempo,
+  lo que es coherente con una ventana fija que reacciona despacio a los
+  cambios de volatilidad.
+- A 99% con 500 días, el modelo normal tiene 40 violaciones frente a 20,1
+  esperadas y Kupiec da p = 8,64e-05. El histórico tiene 24 frente a 20,1,
+  Kupiec p = 0,3988, pero Christoffersen p = 0,00227.
+- La ventana de 750 días es la única combinación que pasa los tres tests al
+  95% con el modelo normal: 96 violaciones frente a 88,1, Kupiec p = 0,3944,
+  Christoffersen p = 0,1040, condicional p = 0,1856. Es un resultado
+  exploratorio, elegido después de ver los datos.
+- En 2022 el histórico tiene 31 violaciones de 251 (12,35%) y el normal 37
+  (14,74%). En 2023 todos tienen 5 de 250 (2,00%).
 - Monte Carlo y paramétrico dan resultados casi idénticos porque simulan el
   mismo supuesto de normalidad. La diferencia máxima diaria de VaR es 0,000202
   en unidades de retorno, o 0,0202 puntos porcentuales, y las violaciones solo
   difieren en 2 de los 2.012 días.
 
-Limitaciones principales: la normalidad no recoge las colas gruesas, la
-ventana fija no se adapta a los cambios de régimen, la cartera es estática y no
-paga costes, y los tests asintóticos tienen poca potencia en muestras
-pequeñas. No se maquillan los resultados: el backtesting falla la independencia
-en los tres métodos.
+Limitaciones principales: la normalidad no recoge las colas gruesas (a 99%
+produce el doble de violaciones esperadas), la ventana fija no se adapta a los
+cambios de régimen, la cartera es estática y no paga costes, y los tests
+asintóticos tienen poca potencia en muestras pequeñas. No se maquillan los
+resultados: a 95% y 500 días los tres métodos fallan la independencia, y a 99%
+el modelo normal falla Kupiec.
 
 Para reproducir todo:
 
@@ -424,4 +516,5 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 python -m pip install -e ".[dev]"
 python -m pytest -q
 python scripts/make_figures.py
+python scripts/make_extended_analysis.py
 ```
