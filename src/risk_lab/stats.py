@@ -27,7 +27,9 @@ class TestResult:
     note: str = ""
 
 
-def _as_violations(violations: Sequence[int] | np.ndarray) -> np.ndarray:
+def _as_violations(
+    violations: int | Sequence[int] | np.ndarray,
+) -> np.ndarray:
     values = np.asarray(violations)
     if values.ndim != 1:
         raise ValueError("violations must be one-dimensional")
@@ -55,6 +57,8 @@ def kupiec_pof(
         raise ValueError("p0 must be strictly between 0 and 1")
 
     if n is None:
+        if isinstance(violations, (int, np.integer)):
+            raise ValueError("n must be supplied when violations is a count")
         values = _as_violations(violations)
         x = int(values.sum())
         n = int(values.size)
@@ -142,4 +146,42 @@ def christoffersen_independence(
         statistic=statistic,
         p_value=float(chi2.sf(statistic, 1)),
         df=1,
+    )
+
+
+def christoffersen_conditional_coverage(
+    violations: Sequence[int] | np.ndarray,
+    p0: float = 0.05,
+) -> TestResult:
+    """Joint conditional coverage test.
+
+    The test combines correct unconditional coverage and independence:
+
+        LR_cc = LR_uc + LR_ind
+
+    Under the null, LR_cc is asymptotically chi-square with two degrees of
+    freedom. If the independence component is undefined, the joint test is
+    undefined and the p-value is NaN.
+    """
+    p0 = float(p0)
+    if not 0.0 < p0 < 1.0:
+        raise ValueError("p0 must be strictly between 0 and 1")
+
+    values = _as_violations(violations)
+    unconditional = kupiec_pof(values, p0=p0)
+    independence = christoffersen_independence(values)
+    if not independence.valid:
+        return TestResult(
+            statistic=float("nan"),
+            p_value=float("nan"),
+            df=2,
+            valid=False,
+            note=independence.note,
+        )
+
+    statistic = float(unconditional.statistic + independence.statistic)
+    return TestResult(
+        statistic=statistic,
+        p_value=float(chi2.sf(statistic, 2)),
+        df=2,
     )

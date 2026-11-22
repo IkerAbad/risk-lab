@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "risk-lab: One-day VaR and CVaR for a three-asset portfolio"
+abstract: >-
+  One-day Value at Risk and Conditional Value at Risk for a fixed
+  three-asset portfolio of SPY, TLT and GLD, with a walk-forward backtest,
+  Kupiec and Christoffersen coverage tests, and a reproducible data snapshot.
+authors:
+  - family-names: Abad
+    given-names: Iker
+    alias: IkerAbad
+version: 0.1.0
+date-released: 2026-11-22
+license: MIT
+repository-code: https://github.com/IkerAbad/risk-lab
+url: https://github.com/IkerAbad/risk-lab
+keywords:
+  - value at risk
+  - expected shortfall
+  - CVaR
+  - backtesting
+  - Kupiec
+  - Christoffersen
+  - quantitative finance

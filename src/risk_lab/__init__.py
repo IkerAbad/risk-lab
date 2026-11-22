@@ -1,6 +1,6 @@
 """Risk Lab: one-day VaR and CVaR with a rolling backtest."""
 
-from .backtest import rolling_backtest, summarize_backtest
+from .backtest import rolling_backtest, summarize_backtest, violations_by_year
 from .data import (
     DEFAULT_TICKERS,
     DEFAULT_WEIGHTS,
@@ -8,6 +8,12 @@ from .data import (
     load_prices,
     portfolio_returns,
     weights_vector,
+)
+from .stats import (
+    TestResult,
+    christoffersen_conditional_coverage,
+    christoffersen_independence,
+    kupiec_pof,
 )
 from .var import (
     RiskEstimate,
@@ -27,10 +33,14 @@ __all__ = [
     "DEFAULT_TICKERS",
     "DEFAULT_WEIGHTS",
     "RiskEstimate",
+    "TestResult",
+    "christoffersen_conditional_coverage",
+    "christoffersen_independence",
     "compute_returns",
     "historical_cvar",
     "historical_risk",
     "historical_var",
+    "kupiec_pof",
     "load_prices",
     "monte_carlo_cvar",
     "monte_carlo_risk",
@@ -42,6 +52,7 @@ __all__ = [
     "rolling_backtest",
     "simulate_portfolio_returns",
     "summarize_backtest",
+    "violations_by_year",
     "weights_vector",
 ]
 

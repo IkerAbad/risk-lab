@@ -1,7 +1,11 @@
 import numpy as np
 import pytest
 
-from risk_lab.stats import christoffersen_independence, kupiec_pof
+from risk_lab.stats import (
+    christoffersen_conditional_coverage,
+    christoffersen_independence,
+    kupiec_pof,
+)
 
 
 def test_kupiec_known_case_matches_expected_p_value():
@@ -54,6 +58,24 @@ def test_christoffersen_detects_clustering():
     result = christoffersen_independence(sequence)
     assert result.valid
     assert result.p_value < 1e-6
+
+
+def test_conditional_coverage_known_case():
+    # Sequence 0,1,1,0,1,0,0,1: LR_uc = 13.285849654573207 and
+    # LR_ind = 1.2429472990872608. The joint statistic is 14.528796953660468
+    # with two degrees of freedom and p = 0.0007000222226161839.
+    sequence = [0, 1, 1, 0, 1, 0, 0, 1]
+    result = christoffersen_conditional_coverage(sequence, p0=0.05)
+    assert result.statistic == pytest.approx(14.528796953660468, abs=1e-9)
+    assert result.p_value == pytest.approx(0.0007000222226161839, abs=1e-6)
+    assert result.df == 2
+    assert result.valid
+
+
+def test_conditional_coverage_is_undefined_without_both_states():
+    result = christoffersen_conditional_coverage([0] * 50, p0=0.05)
+    assert not result.valid
+    assert np.isnan(result.p_value)
 
 
 def test_christoffersen_is_undefined_without_both_states():
