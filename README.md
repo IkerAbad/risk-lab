@@ -222,9 +222,10 @@ normal one, while the average loss beyond it is larger.
 The Monte Carlo and parametric rows are identical after rounding because both
 models assume the same multivariate normal distribution. The Monte Carlo
 estimate is a numerical approximation of the parametric one. The largest
-absolute difference between their daily VaR estimates is 0.000202, and the
-violation flags differ on 2 of the 2,012 days. Those two differences cancel in
-the totals and do not change the transition counts.
+absolute difference between their daily VaR estimates is 0.000202 in return
+units, or 0.0202 percentage points, and the violation flags differ on 2 of the
+2,012 days. Those two differences cancel in the totals and do not change the
+transition counts.
 
 Interpretation:
 
@@ -329,8 +330,8 @@ The suite has 38 tests, one file per module:
 - `tests/test_plots.py`: both figures are written and missing columns are
   rejected.
 
-The tests do not need network access. They use the committed CSV where a real
-file is needed and hand-built arrays everywhere else.
+The tests do not need network access. They use hand-built arrays and temporary
+files. The committed CSV is exercised by `scripts/make_figures.py`.
 
 CI runs on Ubuntu and Windows with Python 3.12 and 3.14. The workflow installs
 the package with the development extra and runs `pytest`.
@@ -405,7 +406,8 @@ Resultados reales:
   despacio a los cambios de volatilidad.
 - Monte Carlo y paramétrico dan resultados casi idénticos porque simulan el
   mismo supuesto de normalidad. La diferencia máxima diaria de VaR es 0,000202
-  y las violaciones solo difieren en 2 de los 2.012 días.
+  en unidades de retorno, o 0,0202 puntos porcentuales, y las violaciones solo
+  difieren en 2 de los 2.012 días.
 
 Limitaciones principales: la normalidad no recoge las colas gruesas, la
 ventana fija no se adapta a los cambios de régimen, la cartera es estática y no
