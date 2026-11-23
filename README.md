@@ -549,7 +549,7 @@ job runs `pip-audit`. CodeQL and dependency review run as separate workflows.
 - The repository has a local `pre-commit` configuration for `ruff`, `ruff
   format`, `mypy` and Bandit.
 - Dependabot keeps the GitHub Actions and the Python dependencies current.
-- The repository is versioned with tags. The current release is `v0.2.7`.
+- The repository is versioned with tags. The current release is `v0.2.8`.
 
 ## Limitations
 

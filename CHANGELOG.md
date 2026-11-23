@@ -3,6 +3,25 @@
 All notable changes to this project are documented in this file. The format
 follows Keep a Changelog and the project uses semantic versioning.
 
+## [0.2.8] - 2026-11-23
+
+### Fixed
+
+- Forced LF line endings for Markdown and checksum files in `.gitattributes`.
+  A fresh Windows checkout converted `docs/data_quality.md` to CRLF, which
+  changed its SHA-256 and failed the committed-output checksum test. The
+  repository now checks out those files with LF on every platform.
+
+### Changed
+
+- Version bumped to 0.2.8.
+
+### Notes
+
+- No numerical result changes.
+- This release supersedes `v0.2.7`, whose Windows CI run failed on the
+  line-ending checksum check.
+
 ## [0.2.7] - 2026-11-23
 
 ### Added
