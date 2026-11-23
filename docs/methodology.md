@@ -207,3 +207,106 @@ The main limitations are documented in the README. The most important are:
 - The coverage tests are asymptotic and have low power in small samples.
 - The analysis is one sample and one portfolio. The results should not be read
   as evidence about other assets or other periods.
+
+## 10. Pre-registered conditional-volatility comparison (2026-11-23)
+
+This protocol was written before running the conditional-volatility comparison.
+The model list, the adaptive rule, the GARCH settings, the loss function, the
+DM lag, the bootstrap settings, the stress years and the winner rule are fixed.
+No choice below is changed after seeing the comparison table.
+
+### 10.1 Evaluation period
+
+The common evaluation period is the same as the main backtest: 2,012 one-day
+forecasts from 2018-11-19 to 2026-11-20. Every model uses only data available
+before the forecast date. The common start is the first date with 500 portfolio
+returns.
+
+### 10.2 Models
+
+1. **Historical 500.** Empirical 5% quantile of the previous 500 portfolio
+   returns. CVaR is the mean of the tail.
+2. **Parametric 500.** Normal VaR and CVaR from the sample mean and sample
+   standard deviation of the previous 500 returns.
+3. **EWMA normal.** Lambda = 0.94, mean = 0. The variance is initialized with
+   the sample variance of the first 500 returns and updated daily as
+   `sigma2_t = 0.94 sigma2_t-1 + 0.06 r_t-1^2`. VaR and CVaR use the normal
+   quantile and the normal tail mean at the conditional volatility.
+4. **GARCH(1,1) normal.** Constant mean, Gaussian quasi-maximum likelihood on
+   the previous 500 returns. Parameters are re-estimated every 21 trading days.
+   The variance is filtered daily with the latest return and the current
+   parameters. The one-step forecast is
+   `sigma2_t = omega + alpha (r_t-1 - mu)^2 + beta sigma2_t-1`. Starting values
+   are `(omega, alpha, beta) = (0.05 var, 0.05, 0.90)`, with bounds
+   `omega > 0`, `0 <= alpha < 1`, `0 <= beta < 1` and `alpha + beta < 0.999`.
+   If the optimizer fails, the last successful parameters are kept. If the first
+   estimation fails, the fallback is `alpha = 0.05`, `beta = 0.90`,
+   `omega = var (1 - 0.95)`.
+5. **Historical adaptive window.** At each date, compute the 20-day and 250-day
+   realized volatilities of portfolio returns. If the ratio is at least 1.25,
+   use a 250-day window. Otherwise use 500 days. The empirical quantile and tail
+   mean use the chosen window.
+6. **Parametric adaptive window.** Same window rule as model 5, applied to the
+   normal mean and standard deviation.
+
+The 750-day window is not part of the adaptive rule. It is already covered by
+the exploratory sensitivity analysis, and excluding it keeps a common start
+without a 750-day warm-up asymmetry.
+
+### 10.3 VaR and ES
+
+VaR and CVaR are positive losses. The confidence levels are 95% and 99%.
+
+- **Parametric ES.** Closed-form normal tail mean for models 2, 3, 4 and 6.
+  Models 1 and 5 do not have a parametric ES and are reported as not applicable.
+- **Simulation ES.** Filtered historical simulation for every model. For each
+  forecast date, standardize the estimation-window returns with the model's
+  conditional mean and volatility. Draw 10,000 standardized residuals with
+  replacement, with seed `42 + position`. Simulate one-day returns at the
+  forecast mean and volatility. The simulated VaR is the 5% quantile and the
+  simulated ES is the mean of the losses beyond it.
+- **Bootstrap interval.** The interval is for the mean ES over the evaluation
+  period. Use a moving block bootstrap of the daily ES series with block length
+  20, 10,000 resamples, seed 42 and the percentile method. Report the 2.5% and
+  97.5% quantiles. Parametric and simulation ES have separate intervals.
+
+### 10.4 Diebold-Mariano
+
+The forecast loss is the quantile loss with `tau = 1 - level` and
+`q_t = -VaR_t`:
+
+```text
+rho_tau(R_t - q_t) = (tau - 1{R_t < q_t}) (R_t - q_t)
+```
+
+For each pair of models, `d_t = L_A,t - L_B,t`. The DM statistic uses the
+Newey-West long-run variance with 5 lags. The p-value is two-sided from the
+standard normal distribution. All 15 pairwise comparisons are reported. The
+Holm-Bonferroni correction is applied to the 15 p-values. A negative mean
+difference favors the first model.
+
+### 10.5 Winner rule
+
+The winner is the model with the lowest mean quantile loss over the full
+evaluation period. It is a clear winner only if its Holm-adjusted DM p-value
+against the second-best model is below 0.05. If no model meets both conditions,
+the result is reported as "no clear winner".
+
+The best model by mean quantile loss in each stress year is also reported, with
+no formal test. The stress years are 2020, 2022 and 2026. They are fixed before
+the comparison.
+
+### 10.6 Coverage
+
+Kupiec and Christoffersen are reported for every model at 5%. The conditional
+coverage test is also reported. A model can have the lowest forecast loss and
+still fail coverage. The comparison reports both facts without selecting a
+different winner.
+
+### 10.7 Selection honesty
+
+The existing 750-day sensitivity result is exploratory and remains labelled as
+such. It is not used to choose the conditional-volatility winner. The new
+winner rule is fixed in this section and is applied exactly once to the
+comparison table.
+
