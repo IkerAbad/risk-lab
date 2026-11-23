@@ -6,12 +6,13 @@ abstract: >-
   three-asset portfolio of SPY, TLT and GLD, with a walk-forward backtest,
   Kupiec and Christoffersen coverage tests, a pre-registered comparison of
   historical, parametric, EWMA, GARCH(1,1) and adaptive-window models with
-  Diebold-Mariano tests, and a reproducible data snapshot.
+  Diebold-Mariano tests, and a dated fresh-data refresh that never overwrites
+  the committed snapshot.
 authors:
   - family-names: Abad
     given-names: Iker
     alias: IkerAbad
-version: 1.0.0
+version: 1.1.0
 date-released: 2026-11-23
 license: MIT
 repository-code: https://github.com/IkerAbad/risk-lab

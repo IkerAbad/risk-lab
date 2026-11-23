@@ -3,6 +3,38 @@
 All notable changes to this project are documented in this file. The format
 follows Keep a Changelog and the project uses semantic versioning.
 
+## [1.1.0] - 2026-11-23
+
+### Added
+
+- `scripts/fetch_live_data.py`: downloads a dated price snapshot to
+  `data/fresh`, validates the schema and both checksums, and never writes to
+  `data/prices.csv`.
+- `scripts/make_fresh_analysis.py`: repeats the main and conditional backtests
+  on the dated fresh file, adds a common-period revision check, and writes the
+  side-by-side tables to `docs/fresh`.
+- `data/fresh/prices_2026-11-23.csv` with its SHA-256.
+- `docs/results_fresh.md` with the fresh tables, the winner change and the
+  GARCH refit diagnostics.
+- Tests for the dated download, the schema and checksum validation, the
+  overwrite guard and the byte-for-byte immutability of the committed snapshot.
+
+### Changed
+
+- 191 tests and 100% statement coverage.
+- Version bumped to 1.1.0, not tagged yet.
+
+### Notes
+
+- The committed `data/prices.csv` snapshot is unchanged.
+- The fresh data adds one trading day and small Yahoo revisions. The
+  point-estimate winner changes from GARCH(1,1) to EWMA at 95% and 99%.
+- The pre-registered winner rule still returns no clear winner: the
+  Holm-adjusted Diebold-Mariano p-value is 1.0000.
+- GARCH moves from rank 1 to rank 6 at 95% because three refits are
+  degenerate. The diagnostics are in `docs/fresh/garch_diagnostics_summary.csv`.
+- The main historical, parametric and Monte Carlo table does not change.
+
 ## [1.0.0] - 2026-11-23
 
 ### Added

@@ -37,7 +37,12 @@
    tables and the yearly counts. `scripts/make_conditional_analysis.py` writes
    the six-model comparison, the Diebold-Mariano, stress-year and ES tables and
    figures 3 and 4. `scripts/data_quality.py` writes the snapshot report.
-6. `scripts/check_all.py` runs the checksum, lint, type check, security scan,
+6. `scripts/fetch_live_data.py` downloads a dated fresh snapshot to `data/fresh`,
+   validates its schema and both checksums, and never writes to
+   `data/prices.csv`. `scripts/make_fresh_analysis.py` repeats the main and
+   conditional backtests on that file and writes the side-by-side tables to
+   `docs/fresh`.
+7. `scripts/check_all.py` runs the checksum, lint, type check, security scan,
    tests with coverage and mutation smoke test.
 
 ## Invariants
@@ -54,7 +59,11 @@
   seed 42.
 - Every public function validates its inputs and raises `ValueError` or
   `TypeError` with a specific message.
-- The committed CSV is checked byte for byte against `data/prices.sha256`.
+- The committed CSV is checked byte for byte against `data/prices.sha256`. The
+  fresh-data scripts verify the same hash before and after every download and
+  never write to `data/prices.csv`.
+- Fresh downloads are dated (`data/fresh/prices_<date>.csv`) and carry their own
+  checksum. A published fresh result is tied to that exact file.
 
 ## Quality layers
 
@@ -73,9 +82,11 @@
 ## Entry points
 
 - `scripts/download_data.py`
+- `scripts/fetch_live_data.py`
 - `scripts/make_figures.py`
 - `scripts/make_extended_analysis.py`
 - `scripts/make_conditional_analysis.py`
+- `scripts/make_fresh_analysis.py`
 - `scripts/data_quality.py`
 - `scripts/mutation_smoke.py`
 - `scripts/check_all.py`

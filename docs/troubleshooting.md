@@ -72,3 +72,25 @@ export MPLBACKEND=Agg        # Windows PowerShell: $env:MPLBACKEND="Agg"
 ```
 
 The scripts already call `matplotlib.use("Agg")` before importing pyplot.
+
+## `data/prices.csv does not match data/prices.sha256`
+
+The canonical snapshot was modified. Restore it from git:
+
+```bash
+git checkout -- data/prices.csv
+```
+
+Do not refresh it in place. Use `scripts/fetch_live_data.py`, which writes a
+dated file under `data/fresh`.
+
+## A fresh file already exists with different content
+
+Yahoo returned different decimals for the same date. Keep the published file,
+or rerun with `--force` if the new download is deliberate. Then rerun
+`scripts/make_fresh_analysis.py`.
+
+## `fresh checksum not found`
+
+Run `scripts/fetch_live_data.py` first. It writes
+`data/fresh/prices_<date>.sha256` next to the CSV.

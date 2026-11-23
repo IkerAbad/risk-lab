@@ -148,3 +148,27 @@ filtered historical ES is more responsive than the raw empirical tail but
 still assumes that the standardized residuals are independent and identically
 distributed. The ES bootstrap uses moving blocks of 20 days and does not
 capture longer dependence.
+
+## D12. Dated fresh snapshots with an immutable canonical file
+
+**Decision.** `data/prices.csv` is never overwritten. Refreshes write a dated
+file to `data/fresh/prices_<date>.csv` with its own SHA-256, and the comparison
+writes to `docs/fresh`.
+
+**Context.** The committed snapshot makes the results reproducible, but a
+pipeline that only works on one frozen file cannot show how the model behaves
+on new data. Overwriting the canonical file in place would silently change
+every published table and break the checksum.
+
+**Consequence.** `scripts/fetch_live_data.py` verifies the canonical checksum
+before and after the download and refuses to replace a changed dated file
+without `--force`. `scripts/make_fresh_analysis.py` verifies both checksums and
+repeats the backtest on the fresh file and on the common period. The fresh
+results in `docs/results_fresh.md` are tied to
+`data/fresh/prices_2026-11-23.csv`. A new download on another day creates a new
+file and does not alter the published comparison.
+
+The first fresh run changed the point-estimate winner from GARCH(1,1) to EWMA.
+The repository publishes that change. The pre-registered winner rule still
+returns no clear winner, and the GARCH diagnostics show that the change comes
+from numerical instability, not from a new economic regime.

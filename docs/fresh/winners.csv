@@ -1,0 +1,7 @@
+dataset,level,best,second,best_mean_loss,second_mean_loss,dm_p_holm,clear_winner,decision
+snapshot,0.95000000,garch,ewma,0.00078343,0.00080799,0.70389606,False,"No clear winner between GARCH(1,1) and EWMA"
+snapshot,0.99000000,garch,ewma,0.00023768,0.00025576,1.00000000,False,"No clear winner between GARCH(1,1) and EWMA"
+fresh_full,0.95000000,ewma,hist500,0.00080876,0.00086007,1.00000000,False,No clear winner between EWMA and Historical 500
+fresh_full,0.99000000,ewma,garch,0.00025589,0.00027248,1.00000000,False,"No clear winner between EWMA and GARCH(1,1)"
+fresh_common,0.95000000,ewma,hist500,0.00080799,0.00085944,1.00000000,False,No clear winner between EWMA and Historical 500
+fresh_common,0.99000000,ewma,garch,0.00025576,0.00027235,1.00000000,False,"No clear winner between EWMA and GARCH(1,1)"

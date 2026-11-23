@@ -64,6 +64,9 @@ file after a deliberate change.
 - The EWMA λ is 0.94 and the GARCH(1,1) model is refit every 21 days.
 - The adaptive window is 250 days when the 20-day/250-day volatility ratio is
   at least 1.25, and 500 days otherwise.
+- The fresh-data comparison is deterministic given the dated fresh CSV. The
+  download itself is not: Yahoo can revise an adjusted close between two
+  requests on the same day. The exact file and its checksum are committed.
 - The empirical quantile uses linear interpolation.
 - The figures and tables have no timestamps, so the bytes do not depend on the
   run date.
@@ -79,6 +82,8 @@ python -m pytest -q --cov=risk_lab --cov-report=term-missing
 python scripts/make_figures.py
 python scripts/make_extended_analysis.py
 python scripts/make_conditional_analysis.py
+python scripts/fetch_live_data.py
+python scripts/make_fresh_analysis.py
 python scripts/data_quality.py
 python scripts/check_all.py
 ```

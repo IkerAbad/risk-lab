@@ -14,6 +14,7 @@ DOCUMENTS = [
     "docs/methodology.md",
     "docs/results.md",
     "docs/results_conditional.md",
+    "docs/results_fresh.md",
     "docs/api.md",
     "docs/architecture.md",
     "docs/decisions.md",
@@ -94,6 +95,29 @@ def test_conditional_es_table_matches_the_csv():
         assert f"{row['mean_cvar']:.4%}" in results
         interval = f"[{row['es_ci_low']:.4%}, {row['es_ci_high']:.4%}]"
         assert interval in results, interval
+
+
+def test_fresh_comparison_table_matches_the_csv():
+    table = pd.read_csv(ROOT / "docs" / "fresh" / "comparison_fresh_95.csv")
+    document = (ROOT / "docs" / "results_fresh.md").read_text(encoding="utf-8")
+    labels = {
+        "hist500": "Historical 500",
+        "param500": "Parametric 500",
+        "ewma": "EWMA",
+        "garch": "GARCH(1,1)",
+        "hist_adaptive": "Historical adaptive",
+        "param_adaptive": "Parametric adaptive",
+    }
+    for _, row in table.iterrows():
+        line = (
+            f"| {labels[row['model']]} | {int(row['violations_snapshot'])} | "
+            f"{int(row['violations_fresh'])} | {int(row['delta_violations'])} | "
+            f"{row['mean_loss_snapshot'] * 10_000:.2f} | "
+            f"{row['mean_loss_fresh'] * 10_000:.2f} | "
+            f"{row['delta_mean_loss_bp']:+.2f} | "
+            f"{int(row['rank_snapshot'])} | {int(row['rank_fresh'])} |"
+        )
+        assert line in document, line
 
 
 def test_data_quality_report_matches_the_snapshot():

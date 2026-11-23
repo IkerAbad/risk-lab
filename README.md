@@ -18,11 +18,15 @@ network access.
 risk-lab/
 ├── data/
 │   ├── prices.csv
-│   └── prices.sha256
+│   ├── prices.sha256
+│   └── fresh/
+│       ├── prices_2026-11-23.csv
+│       └── prices_2026-11-23.sha256
 ├── docs/
 │   ├── methodology.md
 │   ├── results.md
 │   ├── results_conditional.md
+│   ├── results_fresh.md
 │   ├── api.md
 │   ├── architecture.md
 │   ├── decisions.md
@@ -45,12 +49,23 @@ risk-lab/
 │   ├── conditional_dm.csv
 │   ├── conditional_stress.csv
 │   ├── conditional_es.csv
-│   └── conditional_series_95.csv
+│   ├── conditional_series_95.csv
+│   └── fresh/
+│       ├── tables.md
+│       ├── comparison_fresh_95.csv
+│       ├── comparison_fresh_99.csv
+│       ├── comparison_common_95.csv
+│       ├── comparison_common_99.csv
+│       ├── winners.csv
+│       ├── main_comparison.csv
+│       └── garch_diagnostics_summary.csv
 ├── scripts/
 │   ├── download_data.py
+│   ├── fetch_live_data.py
 │   ├── make_figures.py
 │   ├── make_extended_analysis.py
 │   ├── make_conditional_analysis.py
+│   ├── make_fresh_analysis.py
 │   ├── data_quality.py
 │   ├── mutation_smoke.py
 │   ├── update_checksums.py
@@ -73,6 +88,8 @@ risk-lab/
 │   ├── test_stats.py
 │   ├── test_plots.py
 │   ├── test_download.py
+│   ├── test_live_data.py
+│   ├── test_fresh_analysis.py
 │   ├── test_scripts.py
 │   ├── test_properties.py
 │   ├── test_packaging.py
@@ -128,6 +145,10 @@ d33a038e9b4460468ca195b2f7c9c3374ce062d1ff7cf75280f6a8e300e2e3a1
 
 The code is MIT. The price data is included for reproducibility and remains
 subject to the data vendor's terms.
+
+The canonical file is never overwritten. A refresh writes a dated copy to
+`data/fresh/prices_<date>.csv` with its own SHA-256. `scripts/fetch_live_data.py`
+verifies the canonical checksum before and after the download.
 
 ### Source and provenance
 
@@ -445,6 +466,45 @@ The stress-year ranking is mixed. GARCH has the lowest mean loss in 2020,
 EWMA in 2022, and the parametric models in 2026. No model dominates the three
 years.
 
+### Fresh data
+
+The committed snapshot is frozen. `scripts/fetch_live_data.py` downloads a
+dated copy to `data/fresh`, checks the canonical checksum before and after,
+validates the schema and writes a checksum for the new file. It never writes
+to `data/prices.csv`.
+
+```bash
+python scripts/fetch_live_data.py
+python scripts/make_fresh_analysis.py
+```
+
+The committed fresh file is `data/fresh/prices_2026-11-23.csv`: 2,514 rows from
+2016-11-22 to 2026-11-23. It adds one trading day. Yahoo also revised the
+overlapping adjusted closes by at most `1.37e-04%` (TLT), enough to move the
+GARCH optimizer but not the historical or EWMA estimates.
+
+| Model | Mean loss snapshot (bp) | Mean loss fresh (bp) | Rank snapshot | Rank fresh |
+|---|---:|---:|---:|---:|
+| GARCH(1,1) | 7.83 | 8.71 | 1 | 6 |
+| EWMA | 8.08 | 8.09 | 2 | 1 |
+| Historical 500 | 8.59 | 8.60 | 3 | 2 |
+| Parametric adaptive | 8.62 | 8.63 | 4 | 3 |
+| Historical adaptive | 8.63 | 8.64 | 5 | 4 |
+| Parametric 500 | 8.63 | 8.64 | 6 | 5 |
+
+The point-estimate winner changes from GARCH(1,1) to EWMA at 95% and at 99%.
+The pre-registered rule still returns **no clear winner**: the Holm-adjusted
+Diebold-Mariano p-value is 1.0000 at both levels. The common-period run, which
+cuts the fresh prices at 2026-11-20, gives the same ranks, so the change comes
+from the price revisions and not from the extra day.
+
+The GARCH fits explain the change. The canonical run has two failed fits and
+uses the fallback. The fresh run reports success on every fit, but three fits
+have `alpha < 1e-8` and one has `beta > 0.99`. The worst fit puts `omega` at
+159 times the sample variance. The GARCH first place in `v1.0.0` was within
+optimizer noise. The full comparison, the ES tables and the diagnostic are in
+[docs/results_fresh.md](docs/results_fresh.md).
+
 ### Figures
 
 ![Portfolio returns and 95% VaR violations](docs/fig1_returns_violations.png)
@@ -477,6 +537,8 @@ bootstrap intervals. The black markers are the model CVaR.
 - [docs/results_conditional.md](docs/results_conditional.md): the
   pre-registered conditional volatility comparison, expected shortfall with
   bootstrap intervals and stress years.
+- [docs/results_fresh.md](docs/results_fresh.md): the dated fresh-data
+  comparison, the winner change and the GARCH fit diagnostics.
 - [docs/api.md](docs/api.md): public functions, arguments and error conditions.
 - [docs/architecture.md](docs/architecture.md): module responsibilities, data
   flow and invariants.
@@ -577,6 +639,19 @@ and bootstraps the daily ES series. It took about 34 seconds on the machine
 used to build the snapshot and writes the five `docs/conditional_*.csv` files
 and figures 3 and 4.
 
+Download a dated fresh snapshot without touching `data/prices.csv`, then repeat
+the comparison against it:
+
+```bash
+python scripts/fetch_live_data.py
+python scripts/make_fresh_analysis.py
+```
+
+The first command writes `data/fresh/prices_<date>.csv` and its checksum. The
+second writes `docs/fresh` and takes about 90 seconds. It verifies both
+checksums, runs the fresh backtest and the common-period revision check, and
+writes the side-by-side tables.
+
 Regenerate the data quality report:
 
 ```bash
@@ -622,9 +697,14 @@ The pipeline writes:
 `backtest_series.csv` contains one row per forecast date, with the realized
 return, the three VaR and CVaR estimates, and the three violation flags.
 
+The fresh pipeline writes `docs/fresh/tables.md`, the two
+`comparison_fresh_*.csv` files, the two `comparison_common_*.csv` files, the
+two conditional summary and DM files, `winners.csv`, `main_comparison.csv` and
+the GARCH diagnostics.
+
 ## Tests
 
-The suite has 182 tests, grouped by module and by script:
+The suite has 191 tests, grouped by module and by script:
 
 - `tests/test_data.py`: price validation, simple and log returns, weighted
   portfolio returns, weight validation and the committed snapshot checksum.
@@ -641,6 +721,11 @@ The suite has 182 tests, grouped by module and by script:
 - `tests/test_comparison.py`: the adaptive window rule, the six-model backtest,
   no lookahead, summary and loss tables, the 15 pairwise tests, the winner rule,
   stress years, the ES table and the block bootstrap.
+- `tests/test_live_data.py`: the dated download, schema and checksum
+  validation, stale data, overwrite protection and byte-for-byte immutability
+  of the committed snapshot.
+- `tests/test_fresh_analysis.py`: the fresh-versus-snapshot comparison end to
+  end, including the common-period check and the generated tables.
 - `tests/test_stats.py`: Kupiec with N = 250, x = 10 and p0 = 0.05, whose
   p-value is checked to 1e-6 against 0.4529124499351952, plus a known
   Christoffersen independence case, a known conditional coverage case, the
@@ -684,7 +769,7 @@ OpenSSF Scorecard run as separate workflows.
   A corrupted or accidentally regenerated snapshot fails the tests.
 - The committed figures and tables are checked against `docs/checksums.sha256`.
   The data dictionary covers every column in the CSV files.
-- The suite has 182 tests and 100% statement coverage of `src/risk_lab`. CI
+- The suite has 191 tests and 100% statement coverage of `src/risk_lab`. CI
   enforces a 100% threshold.
 - A minimum-dependency CI job checks the declared lower bounds: numpy 1.26.4,
   scipy 1.11.4, pandas 2.1.4 and matplotlib 3.8.4 on Python 3.12.
@@ -719,7 +804,8 @@ OpenSSF Scorecard run as separate workflows.
 - The repository has a local `pre-commit` configuration for `ruff`, `ruff
   format`, `mypy` and Bandit.
 - Dependabot keeps the GitHub Actions and the Python dependencies current.
-- The repository is versioned with tags. The current release is `v1.0.0`.
+- The repository is versioned with tags. The current version is `v1.1.0`; the
+  latest tagged release is `v1.0.0`.
 
 ## Limitations
 
@@ -734,8 +820,9 @@ OpenSSF Scorecard run as separate workflows.
   at 95%, so the window length matters. That pass was selected after inspecting
   the results and is exploratory, not a validated production choice. The
   conditional comparison adds EWMA, GARCH(1,1) and an adaptive window. Those
-  models fix the 95% independence failure, but the pre-registered rule finds no
-  clear winner between GARCH and EWMA, and neither passes Kupiec at 99%.
+  models fix the 95% independence failure, but on the frozen snapshot the
+  pre-registered rule finds no clear winner between GARCH and EWMA, and neither
+  passes Kupiec at 99%.
 - The portfolio is static. Weights are rebalanced daily to 50/35/15 with no
   transaction costs, no taxes and no liquidity constraints. A real portfolio
   would drift between rebalances and pay to trade.
@@ -773,6 +860,13 @@ OpenSSF Scorecard run as separate workflows.
   standardized residuals are independent and identically distributed, which is
   an approximation. The ES bootstrap resamples blocks of 20 days, so it does
   not capture dependence beyond that block length.
+- The GARCH(1,1) fit is numerically fragile. A vendor revision below 0.0002 in
+  the adjusted prices changes the SLSQP path and can produce degenerate fits
+  with `alpha` near zero, `beta` near one, or `omega` far above the sample
+  variance. In the fresh-data comparison this moves GARCH from rank 1 to rank 6
+  at 95%. The pre-registered winner rule still returns no clear winner, but the
+  GARCH point estimate should not be treated as stable until the optimizer
+  acceptance rule is tightened.
 
 ## License
 
@@ -839,15 +933,27 @@ simulado medio al 95% es 1,4394% para GARCH, 1,5888% para EWMA y 1,5531% para
 los históricos, con intervalos bootstrap solapados. En los años de estrés el
 orden cambia: GARCH gana en 2020, EWMA en 2022 y los paramétricos en 2026.
 
+Con datos frescos al 23/11/2026 (una sesión más y revisiones de Yahoo en los
+cierres ajustados), el ganador puntual cambia. GARCH pasa de 7,83 a 8,71 puntos
+básicos de pérdida media al 95% y cae del puesto 1 al 6. EWMA pasa de 8,08 a
+8,09 y sube al puesto 1. Al 99%, GARCH pasa de 2,38 a 2,72 y EWMA de 2,56 a
+2,56, con EWMA también primero. La regla pre-registrada sigue dando **no hay
+ganador claro** en ambos niveles, con Holm p = 1,0000. El cambio no viene de la
+sesión nueva: al recortar los datos frescos al 20/11/2026 el orden es el mismo.
+La causa es la fragilidad numérica de GARCH: tres ajustes con alpha casi cero y
+uno con beta > 0,99, con omega 159 veces la varianza muestral. El primer puesto
+de GARCH en la versión 1.0.0 estaba dentro del ruido del optimizador. El
+detalle está en `docs/results_fresh.md`.
+
 Limitaciones principales: la normalidad no recoge las colas gruesas (a 99%
 produce el doble de violaciones esperadas), la ventana fija no se adapta a los
 cambios de régimen, la cartera es estática y no paga costes, y los tests
 asintóticos tienen poca potencia en muestras pequeñas. No se maquillan los
 resultados: a 95% y 500 días los tres métodos originales fallan la
 independencia, a 99% el modelo normal falla Kupiec, y el análisis condicional
-no encuentra un ganador claro entre GARCH y EWMA.
+no encuentra un ganador claro ni con el snapshot ni con datos frescos.
 
-Robustez: 182 tests, 100% de cobertura, tests de propiedades, comprobación
+Robustez: 191 tests, 100% de cobertura, tests de propiedades, comprobación
 del checksum del CSV, informe de calidad de datos, paquete con `py.typed`, CI
 en Ubuntu, Windows y macOS con Python 3.12 y 3.14, job de versiones mínimas,
 wheel instalada, mutaciones, CodeQL, ruff, mypy, bandit y Dependabot.
@@ -862,4 +968,6 @@ python -m pytest -q
 python scripts/make_figures.py
 python scripts/make_extended_analysis.py
 python scripts/make_conditional_analysis.py
+python scripts/fetch_live_data.py
+python scripts/make_fresh_analysis.py
 ```

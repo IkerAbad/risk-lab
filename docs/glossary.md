@@ -59,3 +59,11 @@
 - **Pre-registration.** Writing and committing the model list, the tests and
   the decision rule before looking at the results, so the conclusion cannot be
   chosen after the fact.
+- **Fresh snapshot.** A dated price download stored under `data/fresh`, with its
+  own checksum. It never replaces the canonical `data/prices.csv`.
+- **Common-period check.** Repeating the fresh comparison after cutting the new
+  prices at the canonical end date, so price revisions can be separated from
+  genuinely new trading days.
+- **Degenerate GARCH fit.** A numerically accepted optimum with `alpha` near
+  zero, `beta` near one, or `omega` far above the sample variance. It is not a
+  stable economic estimate even when the optimizer reports success.

@@ -10,6 +10,10 @@ remains exploratory and was not used to choose the winner.
 The evaluation period is the same 2,012 one-day forecasts from 2018-11-19 to
 2026-11-20. Every model uses only data available before the forecast date.
 
+The results below are tied to the frozen `data/prices.csv` snapshot. The
+dated fresh-data comparison is in
+[`docs/results_fresh.md`](results_fresh.md).
+
 ## 95% results
 
 | Model | Violations | Expected | Rate | Kupiec p | Christoffersen p | Conditional p | Mean loss (bp) | Rank |

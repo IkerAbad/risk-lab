@@ -173,6 +173,78 @@ The `<model>` suffix is one of `hist500`, `param500`, `ewma`, `garch`,
 `var_param_adaptive`, `cvar_param_adaptive`, `es_sim_param_adaptive` and
 `violation_param_adaptive`.
 
+## `data/fresh/prices_<date>.csv`
+
+Same schema as `data/prices.csv`: a `Date` column and one adjusted-close column
+per ticker (`SPY`, `TLT`, `GLD`). The file is a dated download, not the
+canonical snapshot. `data/fresh/prices_<date>.sha256` stores its SHA-256 in the
+`sha256  filename` format.
+
+## `docs/fresh/comparison_fresh_<level>.csv`
+
+| Column | Type | Description |
+|---|---|---|
+| `model` | string | One of the six comparison models. |
+| `violations_snapshot` | int | Violations on the canonical snapshot. |
+| `violations_fresh` | int | Violations on the fresh snapshot. |
+| `delta_violations` | int | `violations_fresh - violations_snapshot`. |
+| `mean_loss_snapshot` | float | Mean quantile loss on the snapshot. |
+| `mean_loss_fresh` | float | Mean quantile loss on the fresh data. |
+| `delta_mean_loss_bp` | float | Fresh minus snapshot, in basis points. |
+| `rank_snapshot` | int | Snapshot rank by mean loss. |
+| `rank_fresh` | int | Fresh rank by mean loss. |
+| `mean_es_snapshot` | float | Mean simulated ES on the snapshot. |
+| `mean_es_fresh` | float | Mean simulated ES on the fresh data. |
+
+`comparison_common_<level>.csv` has the same columns. It uses the fresh prices
+cut at the canonical end date, so it isolates the effect of price revisions.
+
+## `docs/fresh/conditional_summary_fresh.csv`
+
+Same columns as `docs/conditional_summary.csv`, for the fresh sample.
+`conditional_summary_common.csv` is the common-period version.
+
+## `docs/fresh/conditional_dm_fresh.csv`
+
+Same columns as `docs/conditional_dm.csv`, for the fresh sample.
+`conditional_dm_common.csv` is the common-period version.
+
+## `docs/fresh/winners.csv`
+
+| Column | Type | Description |
+|---|---|---|
+| `dataset` | string | `snapshot`, `fresh_full` or `fresh_common`. |
+| `level` | float | Confidence level. |
+| `best` | string | Model with the lowest mean loss. |
+| `second` | string | Model with the second-lowest mean loss. |
+| `best_mean_loss` | float | Mean loss of `best`. |
+| `second_mean_loss` | float | Mean loss of `second`. |
+| `dm_p_holm` | float | Holm-adjusted Diebold-Mariano p-value for the pair. |
+| `clear_winner` | bool | True when `dm_p_holm < 0.05`. |
+| `decision` | string | Pre-registered decision text. |
+
+## `docs/fresh/main_comparison.csv`
+
+One row per method, with `_snapshot` and `_fresh` suffixes on every column of
+`docs/backtest_summary.csv`. `main_summary_fresh.csv` has the fresh columns
+only.
+
+## `docs/fresh/garch_diagnostics.csv`
+
+One row per GARCH refit: `dataset`, `position`, `date`, `converged`, `omega`,
+`alpha`, `beta` and `sample_variance`.
+
+## `docs/fresh/garch_diagnostics_summary.csv`
+
+| Column | Type | Description |
+|---|---|---|
+| `dataset` | string | `snapshot`, `fresh_full` or `fresh_common`. |
+| `refits` | int | Number of GARCH refits. |
+| `failed` | int | Fits where the optimizer reported failure. |
+| `alpha_below_1e_8` | int | Fits with `alpha < 1e-8`. |
+| `beta_above_0_99` | int | Fits with `beta > 0.99`. |
+| `max_omega_over_variance` | float | Largest `omega / sample_variance`. |
+
 ## `docs/checksums.sha256`
 
 One line per generated output, in the format `sha256  filename`. The paths are
