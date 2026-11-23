@@ -3,6 +3,23 @@
 All notable changes to this project are documented in this file. The format
 follows Keep a Changelog and the project uses semantic versioning.
 
+## [0.2.10] - 2026-11-23
+
+### Fixed
+
+- Pinned `ossf/scorecard-action` to `v2.6.0`. The action does not publish a
+  moving `v2` tag, so the Scorecard workflow in `v0.2.9` failed at action
+  resolution.
+
+### Changed
+
+- Version bumped to 0.2.10.
+
+### Notes
+
+- No numerical result changes.
+- This release supersedes `v0.2.9` for the scheduled Scorecard check.
+
 ## [0.2.9] - 2026-11-23
 
 ### Added
