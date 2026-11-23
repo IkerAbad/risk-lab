@@ -20,7 +20,9 @@ The committed results were built with Python 3.12+ and these direct versions:
 | pre-commit | 4.7.0 |
 
 The declared lower bounds are tested in a separate CI job with numpy 1.26.4,
-scipy 1.11.4, pandas 2.1.4 and matplotlib 3.8.4 on Python 3.12.
+scipy 1.11.4, pandas 2.1.4 and matplotlib 3.8.4 on Python 3.12. The same direct
+versions are pinned in `constraints.txt`. A CI job installs from that file and
+runs the test suite.
 
 ## Setup
 

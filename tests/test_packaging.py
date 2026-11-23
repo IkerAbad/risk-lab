@@ -1,4 +1,5 @@
 import inspect
+import re
 import tomllib
 from pathlib import Path
 
@@ -57,3 +58,18 @@ def test_api_reference_covers_the_public_names():
         obj = getattr(risk_lab, name)
         if inspect.isfunction(obj) or inspect.isclass(obj):
             assert name in reference, f"{name} is missing from docs/api.md"
+
+
+def test_constraints_pin_every_direct_dependency():
+    constraints = (ROOT / "constraints.txt").read_text(encoding="utf-8")
+    pinned = {
+        line.split("==")[0].strip().lower()
+        for line in constraints.splitlines()
+        if line.strip() and not line.startswith("#")
+    }
+    project = _pyproject()["project"]
+    dependencies = list(project["dependencies"]) + list(project["optional-dependencies"]["dev"])
+    names = {
+        re.split(r"[<>=!~ ]", dependency, maxsplit=1)[0].lower() for dependency in dependencies
+    }
+    assert names <= pinned

@@ -30,9 +30,10 @@ Optional: install the local hooks with `python -m pre_commit install`. The hooks
 run `ruff check`, `ruff format --check`, `mypy` and Bandit before each commit.
 
 The CI runs the same checks on Ubuntu, Windows and macOS with Python 3.12 and
-3.14. The main workflow also has a minimum-dependency job, a wheel job, a
-mutation job and a dependency audit. A pull request is ready when all ten jobs
-pass. CodeQL and dependency review run on pull requests as separate workflows.
+3.14. The main workflow also has a minimum-dependency job, a pinned-dependency
+job, a wheel job, a mutation job and a dependency audit. A pull request is
+ready when all eleven jobs pass. CodeQL, dependency review and OpenSSF
+Scorecard run on pull requests or on a schedule as separate workflows.
 
 ## Code style
 
@@ -70,6 +71,8 @@ The committed file is `data/prices.csv`. If you refresh it:
    and `update_checksums.py`.
 4. Update every number in `README.md` and `docs/results.md`.
 5. State the data source and the download date in the commit message.
+6. If the change touches a dependency, update `constraints.txt` and
+   `docs/reproducibility.md`.
 
 Do not commit a new CSV and leave the old results in place.
 

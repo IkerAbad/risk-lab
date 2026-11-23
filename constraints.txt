@@ -1,0 +1,13 @@
+# Exact direct dependencies used to build the committed results.
+numpy==2.5.5
+scipy==1.18.1
+pandas==3.1.1
+matplotlib==3.11.2
+pytest==9.2.0
+pytest-cov==7.1.0
+hypothesis==6.170.17
+ruff==0.17.6
+mypy==2.4.1
+bandit==1.9.4
+pip-audit==2.10.1
+pre-commit==4.7.0

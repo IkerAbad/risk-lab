@@ -18,7 +18,9 @@ DOCUMENTS = [
     "docs/decisions.md",
     "docs/data_dictionary.md",
     "docs/data_quality.md",
+    "docs/glossary.md",
     "docs/reproducibility.md",
+    "docs/troubleshooting.md",
 ]
 
 LINK = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
@@ -115,3 +117,12 @@ def test_reproducibility_guide_mentions_the_key_checks():
         "500",
     ):
         assert term in guide
+
+
+def test_glossary_and_troubleshooting_are_complete():
+    glossary = (ROOT / "docs" / "glossary.md").read_text(encoding="utf-8")
+    for term in ("VaR", "CVaR", "Kupiec", "Christoffersen", "Violation"):
+        assert term in glossary
+    troubleshooting = (ROOT / "docs" / "troubleshooting.md").read_text(encoding="utf-8")
+    for term in ("Access denied", "ModuleNotFoundError", "checksum", "MPLBACKEND"):
+        assert term in troubleshooting

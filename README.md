@@ -27,7 +27,9 @@ risk-lab/
 │   ├── decisions.md
 │   ├── data_dictionary.md
 │   ├── data_quality.md
+│   ├── glossary.md
 │   ├── reproducibility.md
+│   ├── troubleshooting.md
 │   ├── checksums.sha256
 │   ├── fig1_returns_violations.png
 │   ├── fig2_rolling_var.png
@@ -67,13 +69,15 @@ risk-lab/
 │   │   ├── ci.yml
 │   │   ├── codeql.yml
 │   │   ├── dependency-review.yml
-│   │   └── release.yml
+│   │   ├── release.yml
+│   │   └── scorecard.yml
 │   ├── CODEOWNERS
 │   ├── ISSUE_TEMPLATE/
 │   │   └── bug_report.yml
 │   ├── pull_request_template.md
 │   └── dependabot.yml
 ├── .pre-commit-config.yaml
+├── constraints.txt
 ├── pyproject.toml
 ├── README.md
 ├── CONTRIBUTING.md
@@ -108,6 +112,9 @@ SHA-256 of the committed CSV, also stored in `data/prices.sha256`:
 ```text
 d33a038e9b4460468ca195b2f7c9c3374ce062d1ff7cf75280f6a8e300e2e3a1
 ```
+
+The code is MIT. The price data is included for reproducibility and remains
+subject to the data vendor's terms.
 
 ### Source and provenance
 
@@ -352,8 +359,12 @@ Carlo lines are nearly identical.
   committed CSV files.
 - [docs/data_quality.md](docs/data_quality.md): row counts, price ranges and
   return statistics of the committed snapshot.
+- [docs/glossary.md](docs/glossary.md): VaR, CVaR and the other terms used in
+  the report.
 - [docs/reproducibility.md](docs/reproducibility.md): environment, commands,
   checksums and determinism.
+- [docs/troubleshooting.md](docs/troubleshooting.md): common setup and data
+  errors.
 - [CONTRIBUTING.md](CONTRIBUTING.md): setup, checks and how to add a method.
 - [CHANGELOG.md](CHANGELOG.md): version history.
 - [CITATION.cff](CITATION.cff): citation metadata.
@@ -466,7 +477,7 @@ return, the three VaR and CVaR estimates, and the three violation flags.
 
 ## Tests
 
-The suite has 133 tests, grouped by module and by script:
+The suite has 135 tests, grouped by module and by script:
 
 - `tests/test_data.py`: price validation, simple and log returns, weighted
   portfolio returns, weight validation and the committed snapshot checksum.
@@ -504,12 +515,12 @@ against `data/prices.sha256`.
 
 The main workflow runs the six-job matrix on Ubuntu, Windows and macOS with
 Python 3.12 and 3.14, a minimum-dependency job with numpy 1.26.4, scipy
-1.11.4, pandas 2.1.4 and matplotlib 3.8.4, and a wheel-install job. The
-minimum-dependency test job runs `pytest`. The matrix jobs run `ruff check`,
+1.11.4, pandas 2.1.4 and matplotlib 3.8.4, a pinned-dependency job with
+`constraints.txt`, a wheel job that installs the wheel and runs the test suite,
+a mutation job and a dependency audit job. The matrix jobs run `ruff check`,
 `ruff format --check`, `mypy` over `src`, `tests` and `scripts`, Bandit and
-`pytest` with a 100% coverage threshold. A mutation job runs five source
-mutations and checks that the suite catches all of them. A dependency audit
-job runs `pip-audit`. CodeQL and dependency review run as separate workflows.
+`pytest` with a 100% coverage threshold. CodeQL, dependency review and
+OpenSSF Scorecard run as separate workflows.
 
 ## Robustness
 
@@ -517,12 +528,15 @@ job runs `pip-audit`. CodeQL and dependency review run as separate workflows.
   A corrupted or accidentally regenerated snapshot fails the tests.
 - The committed figures and tables are checked against `docs/checksums.sha256`.
   The data dictionary covers every column in the CSV files.
-- The suite has 133 tests and 100% statement coverage of `src/risk_lab`. CI
+- The suite has 135 tests and 100% statement coverage of `src/risk_lab`. CI
   enforces a 100% threshold.
 - A minimum-dependency CI job checks the declared lower bounds: numpy 1.26.4,
   scipy 1.11.4, pandas 2.1.4 and matplotlib 3.8.4 on Python 3.12.
-- A wheel job builds the package, installs it in a clean environment and checks
-  the `py.typed` marker.
+- A pinned-dependency CI job installs the exact direct versions in
+  `constraints.txt`.
+- A wheel job builds the package, installs it in a clean environment, checks
+  the `py.typed` marker and runs the full test suite against the installed
+  wheel.
 - A dependency audit job runs `pip-audit` on the development environment.
 - Property-based tests cover the numerical invariants: CVaR is at least VaR,
   VaR is monotone in the confidence level, the empirical VaR is the negative
@@ -539,8 +553,8 @@ job runs `pip-audit`. CodeQL and dependency review run as separate workflows.
 - CI runs `ruff`, `mypy`, Bandit and the test suite on Ubuntu, Windows and
   macOS with Python 3.12 and 3.14.
 - CodeQL runs on every push, every pull request and once a week. Dependency
-  review runs on every pull request. A `v*` tag builds a wheel and attaches it
-  to the GitHub release.
+  review runs on every pull request. OpenSSF Scorecard runs weekly and on
+  every push. A `v*` tag builds a wheel and attaches it to the GitHub release.
 - `scripts/check_all.py` runs the checksum, `ruff`, `mypy`, Bandit and the test
   suite with coverage in one command.
 - `scripts/mutation_smoke.py` checks that the suite catches five source
@@ -549,7 +563,7 @@ job runs `pip-audit`. CodeQL and dependency review run as separate workflows.
 - The repository has a local `pre-commit` configuration for `ruff`, `ruff
   format`, `mypy` and Bandit.
 - Dependabot keeps the GitHub Actions and the Python dependencies current.
-- The repository is versioned with tags. The current release is `v0.2.8`.
+- The repository is versioned with tags. The current release is `v0.2.9`.
 
 ## Limitations
 
@@ -649,7 +663,7 @@ asintóticos tienen poca potencia en muestras pequeñas. No se maquillan los
 resultados: a 95% y 500 días los tres métodos fallan la independencia, y a 99%
 el modelo normal falla Kupiec.
 
-Robustez: 133 tests, 100% de cobertura, tests de propiedades, comprobación
+Robustez: 135 tests, 100% de cobertura, tests de propiedades, comprobación
 del checksum del CSV, informe de calidad de datos, paquete con `py.typed`, CI
 en Ubuntu, Windows y macOS con Python 3.12 y 3.14, job de versiones mínimas,
 wheel instalada, mutaciones, CodeQL, ruff, mypy, bandit y Dependabot.

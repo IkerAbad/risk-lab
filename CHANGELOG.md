@@ -3,6 +3,29 @@
 All notable changes to this project are documented in this file. The format
 follows Keep a Changelog and the project uses semantic versioning.
 
+## [0.2.9] - 2026-11-23
+
+### Added
+
+- `constraints.txt` with the exact direct dependency versions used to build
+  the committed results.
+- Pinned-dependency CI job that installs from `constraints.txt` and runs the
+  test suite.
+- The wheel job now runs the full test suite against the installed wheel.
+- `docs/glossary.md` with the risk terms used in the report.
+- `docs/troubleshooting.md` with the common setup and data errors.
+- OpenSSF Scorecard workflow.
+- Data attribution note in the README.
+
+### Changed
+
+- 135 tests and 100% statement coverage.
+- Version bumped to 0.2.9.
+
+### Notes
+
+- No numerical result changes.
+
 ## [0.2.8] - 2026-11-23
 
 ### Fixed
@@ -38,7 +61,7 @@ follows Keep a Changelog and the project uses semantic versioning.
 
 ### Changed
 
-- 133 tests and 100% statement coverage.
+- 135 tests and 100% statement coverage.
 - Version bumped to 0.2.7.
 
 ### Notes
@@ -58,7 +81,7 @@ follows Keep a Changelog and the project uses semantic versioning.
 
 ### Changed
 
-- 133 tests and 100% statement coverage.
+- 135 tests and 100% statement coverage.
 - Version bumped to 0.2.6.
 
 ### Notes
