@@ -22,7 +22,9 @@ python -m bandit -r src scripts -q
 Or run the whole gate with `python scripts/check_all.py`.
 
 The CI runs the same checks on Ubuntu, Windows and macOS with Python 3.12 and
-3.14. A pull request is ready when all six jobs pass.
+3.14. The main workflow also has a minimum-dependency job and a wheel job. A
+pull request is ready when all eight jobs pass. CodeQL and dependency review
+run on pull requests as separate workflows.
 
 ## Code style
 
@@ -56,7 +58,8 @@ The committed file is `data/prices.csv`. If you refresh it:
 1. Run `python scripts/download_data.py`.
 2. Update the SHA-256 in `README.md`, `docs/methodology.md` and
    `data/prices.sha256`.
-3. Re-run both scripts.
+3. Re-run `make_figures.py`, `make_extended_analysis.py` and
+   `data_quality.py`.
 4. Update every number in `README.md` and `docs/results.md`.
 5. State the data source and the download date in the commit message.
 

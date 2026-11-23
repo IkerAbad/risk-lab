@@ -23,6 +23,7 @@ risk-lab/
 │   ├── methodology.md
 │   ├── results.md
 │   ├── api.md
+│   ├── data_quality.md
 │   ├── fig1_returns_violations.png
 │   ├── fig2_rolling_var.png
 │   ├── full_sample_risk.csv
@@ -34,6 +35,7 @@ risk-lab/
 │   ├── download_data.py
 │   ├── make_figures.py
 │   ├── make_extended_analysis.py
+│   ├── data_quality.py
 │   └── check_all.py
 ├── src/risk_lab/
 │   ├── data.py
@@ -53,7 +55,10 @@ risk-lab/
 │   ├── test_packaging.py
 │   └── test_docs.py
 ├── .github/
-│   ├── workflows/ci.yml
+│   ├── workflows/
+│   │   ├── ci.yml
+│   │   ├── codeql.yml
+│   │   └── dependency-review.yml
 │   └── dependabot.yml
 ├── pyproject.toml
 ├── README.md
@@ -325,6 +330,8 @@ Carlo lines are nearly identical.
 - [docs/results.md](docs/results.md): full tables for 95%, 99%, windows and
   calendar years.
 - [docs/api.md](docs/api.md): public functions, arguments and error conditions.
+- [docs/data_quality.md](docs/data_quality.md): row counts, price ranges and
+  return statistics of the committed snapshot.
 - [CONTRIBUTING.md](CONTRIBUTING.md): setup, checks and how to add a method.
 - [CHANGELOG.md](CHANGELOG.md): version history.
 - [CITATION.cff](CITATION.cff): citation metadata.
@@ -381,6 +388,12 @@ This runs six backtests with 100,000 scenarios each. It took about 63 seconds
 on the machine used to build the snapshot and writes `docs/sensitivity.csv` and
 `docs/violations_by_year.csv`.
 
+Regenerate the data quality report:
+
+```bash
+python scripts/data_quality.py
+```
+
 Refresh the price snapshot (needs network access):
 
 ```bash
@@ -400,13 +413,14 @@ The pipeline writes:
 - `docs/backtest_series.csv`
 - `docs/sensitivity.csv`
 - `docs/violations_by_year.csv`
+- `docs/data_quality.md`
 
 `backtest_series.csv` contains one row per forecast date, with the realized
 return, the three VaR and CVaR estimates, and the three violation flags.
 
 ## Tests
 
-The suite has 118 tests, grouped by module and by script:
+The suite has 122 tests, grouped by module and by script:
 
 - `tests/test_data.py`: price validation, simple and log returns, weighted
   portfolio returns, weight validation and the committed snapshot checksum.
@@ -424,10 +438,12 @@ The suite has 118 tests, grouped by module and by script:
   and missing columns are rejected.
 - `tests/test_download.py`: Stooq and Yahoo parsing with mocked HTTP responses,
   fallback behaviour, malformed payloads and the command-line error path.
-- `tests/test_scripts.py`: end-to-end runs of both scripts on synthetic data
-  and clean error handling when the input file is missing.
+- `tests/test_scripts.py`: end-to-end runs of the scripts on synthetic data,
+  the data quality report and clean error handling when the input file is
+  missing.
 - `tests/test_properties.py`: Hypothesis checks for CVaR >= VaR, monotonicity
-  in the confidence level, the empirical quantile identity and p-value ranges.
+  in the confidence level, the empirical quantile identity, p-value ranges,
+  portfolio linearity and a CSV roundtrip.
 - `tests/test_packaging.py`: version consistency across `pyproject.toml`, the
   package, `CITATION.cff` and `CHANGELOG.md`, plus the `py.typed` marker.
 - `tests/test_docs.py`: relative Markdown links and consistency between the
@@ -437,16 +453,23 @@ The tests do not need network access. They use hand-built arrays, mocked HTTP
 responses and temporary files. The committed CSV is checked byte for byte
 against `data/prices.sha256`.
 
-CI runs on Ubuntu, Windows and macOS with Python 3.12 and 3.14. The workflow
-installs the package with the development extra, runs `ruff`, runs `mypy`, runs
-Bandit and runs `pytest` with a 99% coverage threshold.
+The main workflow runs the six-job matrix on Ubuntu, Windows and macOS with
+Python 3.12 and 3.14, a minimum-dependency job with numpy 1.26.4, scipy
+1.11.4, pandas 2.1.4 and matplotlib 3.8.4, and a wheel-install job. The
+minimum-dependency test job runs `pytest`. The matrix jobs run `ruff`, `mypy`,
+Bandit and `pytest` with a 99% coverage threshold. CodeQL and dependency review
+run as separate workflows.
 
 ## Robustness
 
 - The committed CSV is checked against `data/prices.sha256` by the test suite.
   A corrupted or accidentally regenerated snapshot fails the tests.
-- The suite has 118 tests and 99.5% statement coverage of `src/risk_lab`. CI
+- The suite has 122 tests and 99.5% statement coverage of `src/risk_lab`. CI
   enforces a 99% threshold.
+- A minimum-dependency CI job checks the declared lower bounds: numpy 1.26.4,
+  scipy 1.11.4, pandas 2.1.4 and matplotlib 3.8.4 on Python 3.12.
+- A wheel job builds the package, installs it in a clean environment and checks
+  the `py.typed` marker.
 - Property-based tests cover the numerical invariants: CVaR is at least VaR,
   VaR is monotone in the confidence level, the empirical VaR is the negative
   quantile and every p-value is a probability.
@@ -455,14 +478,16 @@ Bandit and runs `pytest` with a 99% coverage threshold.
   arrays, NaN, infinite values, invalid levels and bad weights.
 - The downloader has unit tests with mocked HTTP responses, so Stooq errors,
   Yahoo errors and malformed payloads are tested without network access.
-- `make_figures.py` and `make_extended_analysis.py` return a non-zero exit code
-  and a one-line error message instead of a traceback.
+- `make_figures.py`, `make_extended_analysis.py` and `data_quality.py` return a
+  non-zero exit code and a one-line error message instead of a traceback.
 - CI runs `ruff`, `mypy`, Bandit and the test suite on Ubuntu, Windows and
   macOS with Python 3.12 and 3.14.
+- CodeQL runs on every push, every pull request and once a week. Dependency
+  review runs on every pull request.
 - `scripts/check_all.py` runs the checksum, `ruff`, `mypy`, Bandit and the test
   suite with coverage in one command.
 - Dependabot keeps the GitHub Actions and the Python dependencies current.
-- The repository is versioned with tags. The current release is `v0.2.2`.
+- The repository is versioned with tags. The current release is `v0.2.3`.
 
 ## Limitations
 
@@ -562,9 +587,10 @@ asintóticos tienen poca potencia en muestras pequeñas. No se maquillan los
 resultados: a 95% y 500 días los tres métodos fallan la independencia, y a 99%
 el modelo normal falla Kupiec.
 
-Robustez: 118 tests, 99,5% de cobertura, tests de propiedades, comprobación
-del checksum del CSV, paquete con `py.typed`, CI en Ubuntu, Windows y macOS
-con Python 3.12 y 3.14, ruff, mypy, bandit y Dependabot.
+Robustez: 122 tests, 99,5% de cobertura, tests de propiedades, comprobación
+del checksum del CSV, informe de calidad de datos, paquete con `py.typed`, CI
+en Ubuntu, Windows y macOS con Python 3.12 y 3.14, job de versiones mínimas,
+wheel instalada, CodeQL, ruff, mypy, bandit y Dependabot.
 
 Para reproducir todo:
 

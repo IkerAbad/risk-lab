@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "risk-lab"
-version = "0.2.2"
+version = "0.2.3"
 description = "One-day VaR and CVaR with a rolling backtest for a three-asset portfolio."
 readme = "README.md"
 requires-python = ">=3.12"

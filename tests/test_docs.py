@@ -13,6 +13,7 @@ DOCUMENTS = [
     "docs/methodology.md",
     "docs/results.md",
     "docs/api.md",
+    "docs/data_quality.md",
 ]
 
 LINK = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
@@ -60,3 +61,10 @@ def test_results_page_99_percent_table_matches_the_sensitivity_csv():
             subset.loc[subset["method"] == method, "violations"].iloc[0]
         )
         assert f"| {label} | {violations} |" in results
+
+
+def test_data_quality_report_matches_the_snapshot():
+    report = (ROOT / "docs" / "data_quality.md").read_text(encoding="utf-8")
+    assert "| Rows | 2513 |" in report
+    assert "| First date | 2016-11-22 |" in report
+    assert "| Last date | 2026-11-20 |" in report

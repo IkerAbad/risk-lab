@@ -3,6 +3,29 @@
 All notable changes to this project are documented in this file. The format
 follows Keep a Changelog and the project uses semantic versioning.
 
+## [0.2.3] - 2026-11-23
+
+### Added
+
+- Minimum-dependency CI job with numpy 1.26.4, scipy 1.11.4, pandas 2.1.4 and
+  matplotlib 3.8.4 on Python 3.12.
+- Wheel build and clean-install CI job, including a check for the `py.typed`
+  marker.
+- CodeQL workflow for static security analysis.
+- Dependency review workflow for pull requests.
+- `scripts/data_quality.py` and `docs/data_quality.md` with row counts, price
+  ranges, return statistics and observations by year.
+- Tests for the data quality report.
+
+### Changed
+
+- 122 tests and 99.52% statement coverage.
+- Version bumped to 0.2.3.
+
+### Notes
+
+- No numerical result changes.
+
 ## [0.2.2] - 2026-11-22
 
 ### Added

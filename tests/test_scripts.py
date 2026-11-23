@@ -21,6 +21,7 @@ def _load_script(name: str):
 make_figures = _load_script("make_figures")
 make_extended = _load_script("make_extended_analysis")
 check_all = _load_script("check_all")
+data_quality = _load_script("data_quality")
 
 
 def _write_prices(path: Path) -> None:
@@ -166,3 +167,42 @@ def test_make_figures_reports_an_invalid_window(tmp_path, capsys):
 def test_check_all_verifies_the_committed_checksum(capsys):
     assert check_all.verify_checksum() is True
     assert "checksum: OK" in capsys.readouterr().out
+
+
+def test_data_quality_end_to_end(tmp_path):
+    data = tmp_path / "prices.csv"
+    docs = tmp_path / "docs"
+    _write_prices(data)
+
+    code = data_quality.main(
+        ["--data", str(data), "--docs", str(docs)]
+    )
+
+    assert code == 0
+    report = (docs / "data_quality.md").read_text(encoding="utf-8")
+    assert "# Data quality" in report
+    assert "SPY" in report
+    assert "Observations by year" in report
+
+
+def test_data_quality_reports_a_clean_error(tmp_path, capsys):
+    code = data_quality.main(
+        [
+            "--data",
+            str(tmp_path / "missing.csv"),
+            "--docs",
+            str(tmp_path / "docs"),
+        ]
+    )
+    assert code == 1
+    assert "error:" in capsys.readouterr().err
+
+
+def test_build_data_quality_report_contains_the_metrics():
+    index = pd.to_datetime(["2024-01-02", "2024-01-03", "2024-01-04"])
+    prices = pd.DataFrame({"A": [100.0, 110.0, 99.0]}, index=index)
+    returns = prices.pct_change(fill_method=None).dropna()
+    report = data_quality.build_report(prices, returns)
+    assert "| Rows | 3 |" in report
+    assert "| A | 100.00 | 99.00 | 99.00 | 110.00 |" in report
+    assert "| 2024 | 3 |" in report
