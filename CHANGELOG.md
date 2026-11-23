@@ -3,6 +3,26 @@
 All notable changes to this project are documented in this file. The format
 follows Keep a Changelog and the project uses semantic versioning.
 
+## [0.2.6] - 2026-11-23
+
+### Added
+
+- 100% statement coverage. The two remaining defensive branches now have
+  explicit tests: a non-datetime index in `load_prices` and a non-finite
+  Christoffersen statistic.
+- Dependency audit job with `pip-audit`.
+- `docs/architecture.md` and `docs/decisions.md`.
+- GitHub issue report form and pull request template.
+
+### Changed
+
+- 130 tests and 100% statement coverage.
+- Version bumped to 0.2.6.
+
+### Notes
+
+- No numerical result changes.
+
 ## [0.2.5] - 2026-11-23
 
 ### Added

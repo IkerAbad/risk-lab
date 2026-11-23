@@ -151,6 +151,13 @@ def test_load_prices_rejects_infinite_values(tmp_path):
         load_prices(path)
 
 
+def test_load_prices_rejects_a_non_datetime_index(monkeypatch, tmp_path):
+    frame = pd.DataFrame({"SPY": [100.0]})
+    monkeypatch.setattr(pd, "read_csv", lambda *args, **kwargs: frame)
+    with pytest.raises(ValueError, match="could not be parsed as dates"):
+        load_prices(tmp_path / "prices.csv")
+
+
 def test_compute_returns_rejects_empty_prices():
     with pytest.raises(ValueError, match="prices are empty"):
         compute_returns(pd.DataFrame())

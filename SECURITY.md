@@ -35,9 +35,8 @@ The most relevant risks are therefore:
 
 The test suite covers input validation, the committed snapshot checksum, the
 estimators, the backtest, the statistical tests and the plotting code. CI runs
-Bandit on the package and the scripts. CodeQL scans the repository on every
-push and pull request. Dependabot keeps the actions and the Python dependencies
-current.
+Bandit and `pip-audit`. CodeQL scans the repository on every push and pull
+request. Dependabot keeps the actions and the Python dependencies current.
 
 ## Response
 

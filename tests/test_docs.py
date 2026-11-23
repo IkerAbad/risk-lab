@@ -13,6 +13,8 @@ DOCUMENTS = [
     "docs/methodology.md",
     "docs/results.md",
     "docs/api.md",
+    "docs/architecture.md",
+    "docs/decisions.md",
     "docs/data_quality.md",
 ]
 
@@ -62,3 +64,12 @@ def test_data_quality_report_matches_the_snapshot():
     assert "| Rows | 2513 |" in report
     assert "| First date | 2016-11-22 |" in report
     assert "| Last date | 2026-11-20 |" in report
+
+
+def test_architecture_and_decisions_documents_are_complete():
+    architecture = (ROOT / "docs" / "architecture.md").read_text(encoding="utf-8")
+    for module in ("data", "var", "backtest", "stats", "plots"):
+        assert module in architecture
+    decisions = (ROOT / "docs" / "decisions.md").read_text(encoding="utf-8")
+    for term in ("positive losses", "50/35/15", "500-day", "Yahoo Finance"):
+        assert term in decisions

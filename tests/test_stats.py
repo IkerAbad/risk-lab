@@ -124,6 +124,14 @@ def test_violations_must_be_one_dimensional():
         christoffersen_independence(np.array([[0, 1], [1, 0]]))
 
 
+def test_christoffersen_rejects_a_non_finite_statistic(monkeypatch):
+    monkeypatch.setattr("risk_lab.stats.xlogy", lambda *args: np.nan)
+    result = christoffersen_independence([0, 1, 0, 1])
+    assert not result.valid
+    assert np.isnan(result.p_value)
+    assert "not finite" in result.note
+
+
 def test_conditional_coverage_rejects_invalid_p0():
     with pytest.raises(ValueError, match="between 0 and 1"):
         christoffersen_conditional_coverage([0, 1], p0=0.0)

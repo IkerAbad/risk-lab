@@ -23,6 +23,8 @@ risk-lab/
 │   ├── methodology.md
 │   ├── results.md
 │   ├── api.md
+│   ├── architecture.md
+│   ├── decisions.md
 │   ├── data_quality.md
 │   ├── fig1_returns_violations.png
 │   ├── fig2_rolling_var.png
@@ -62,6 +64,9 @@ risk-lab/
 │   │   ├── codeql.yml
 │   │   └── dependency-review.yml
 │   ├── CODEOWNERS
+│   ├── ISSUE_TEMPLATE/
+│   │   └── bug_report.yml
+│   ├── pull_request_template.md
 │   └── dependabot.yml
 ├── .pre-commit-config.yaml
 ├── pyproject.toml
@@ -334,6 +339,10 @@ Carlo lines are nearly identical.
 - [docs/results.md](docs/results.md): full tables for 95%, 99%, windows and
   calendar years.
 - [docs/api.md](docs/api.md): public functions, arguments and error conditions.
+- [docs/architecture.md](docs/architecture.md): module responsibilities, data
+  flow and invariants.
+- [docs/decisions.md](docs/decisions.md): the main design decisions and their
+  consequences.
 - [docs/data_quality.md](docs/data_quality.md): row counts, price ranges and
   return statistics of the committed snapshot.
 - [CONTRIBUTING.md](CONTRIBUTING.md): setup, checks and how to add a method.
@@ -359,6 +368,7 @@ python -m ruff check .
 python -m ruff format --check .
 python -m mypy src tests scripts
 python -m bandit -r src scripts -q
+python -m pip_audit --progress-spinner off  # needs network
 ```
 
 Or run the whole gate with one command:
@@ -439,7 +449,7 @@ return, the three VaR and CVaR estimates, and the three violation flags.
 
 ## Tests
 
-The suite has 127 tests, grouped by module and by script:
+The suite has 130 tests, grouped by module and by script:
 
 - `tests/test_data.py`: price validation, simple and log returns, weighted
   portfolio returns, weight validation and the committed snapshot checksum.
@@ -480,20 +490,21 @@ Python 3.12 and 3.14, a minimum-dependency job with numpy 1.26.4, scipy
 1.11.4, pandas 2.1.4 and matplotlib 3.8.4, and a wheel-install job. The
 minimum-dependency test job runs `pytest`. The matrix jobs run `ruff check`,
 `ruff format --check`, `mypy` over `src`, `tests` and `scripts`, Bandit and
-`pytest` with a 99% coverage threshold. A mutation job runs five source
-mutations and checks that the suite catches all of them. CodeQL and dependency
-review run as separate workflows.
+`pytest` with a 100% coverage threshold. A mutation job runs five source
+mutations and checks that the suite catches all of them. A dependency audit
+job runs `pip-audit`. CodeQL and dependency review run as separate workflows.
 
 ## Robustness
 
 - The committed CSV is checked against `data/prices.sha256` by the test suite.
   A corrupted or accidentally regenerated snapshot fails the tests.
-- The suite has 127 tests and 99.5% statement coverage of `src/risk_lab`. CI
-  enforces a 99% threshold.
+- The suite has 130 tests and 100% statement coverage of `src/risk_lab`. CI
+  enforces a 100% threshold.
 - A minimum-dependency CI job checks the declared lower bounds: numpy 1.26.4,
   scipy 1.11.4, pandas 2.1.4 and matplotlib 3.8.4 on Python 3.12.
 - A wheel job builds the package, installs it in a clean environment and checks
   the `py.typed` marker.
+- A dependency audit job runs `pip-audit` on the development environment.
 - Property-based tests cover the numerical invariants: CVaR is at least VaR,
   VaR is monotone in the confidence level, the empirical VaR is the negative
   quantile and every p-value is a probability.
@@ -518,7 +529,7 @@ review run as separate workflows.
 - The repository has a local `pre-commit` configuration for `ruff`, `ruff
   format`, `mypy` and Bandit.
 - Dependabot keeps the GitHub Actions and the Python dependencies current.
-- The repository is versioned with tags. The current release is `v0.2.5`.
+- The repository is versioned with tags. The current release is `v0.2.6`.
 
 ## Limitations
 
@@ -618,7 +629,7 @@ asintóticos tienen poca potencia en muestras pequeñas. No se maquillan los
 resultados: a 95% y 500 días los tres métodos fallan la independencia, y a 99%
 el modelo normal falla Kupiec.
 
-Robustez: 127 tests, 99,5% de cobertura, tests de propiedades, comprobación
+Robustez: 130 tests, 100% de cobertura, tests de propiedades, comprobación
 del checksum del CSV, informe de calidad de datos, paquete con `py.typed`, CI
 en Ubuntu, Windows y macOS con Python 3.12 y 3.14, job de versiones mínimas,
 wheel instalada, mutaciones, CodeQL, ruff, mypy, bandit y Dependabot.

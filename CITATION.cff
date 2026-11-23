@@ -9,7 +9,7 @@ authors:
   - family-names: Abad
     given-names: Iker
     alias: IkerAbad
-version: 0.2.5
+version: 0.2.6
 date-released: 2026-11-22
 license: MIT
 repository-code: https://github.com/IkerAbad/risk-lab

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "risk-lab"
-version = "0.2.5"
+version = "0.2.6"
 description = "One-day VaR and CVaR with a rolling backtest for a three-asset portfolio."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -42,6 +42,7 @@ dev = [
     "ruff>=0.6",
     "mypy>=1.10",
     "bandit>=1.8",
+    "pip-audit>=2.7",
     "pre-commit>=3.7",
 ]
 
@@ -81,5 +82,5 @@ source = ["risk_lab"]
 
 [tool.coverage.report]
 show_missing = true
-fail_under = 99
+fail_under = 100
 

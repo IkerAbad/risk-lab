@@ -30,9 +30,9 @@ Optional: install the local hooks with `python -m pre_commit install`. The hooks
 run `ruff check`, `ruff format --check`, `mypy` and Bandit before each commit.
 
 The CI runs the same checks on Ubuntu, Windows and macOS with Python 3.12 and
-3.14. The main workflow also has a minimum-dependency job, a wheel job and a
-mutation job. A pull request is ready when all nine jobs pass. CodeQL and
-dependency review run on pull requests as separate workflows.
+3.14. The main workflow also has a minimum-dependency job, a wheel job, a
+mutation job and a dependency audit. A pull request is ready when all ten jobs
+pass. CodeQL and dependency review run on pull requests as separate workflows.
 
 ## Code style
 

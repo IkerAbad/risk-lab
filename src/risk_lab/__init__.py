@@ -56,4 +56,4 @@ __all__ = [
     "weights_vector",
 ]
 
-__version__ = "0.2.5"
+__version__ = "0.2.6"
