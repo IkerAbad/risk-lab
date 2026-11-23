@@ -13,7 +13,7 @@ from dataclasses import dataclass
 
 import numpy as np
 from scipy.special import xlogy
-from scipy.stats import chi2
+from scipy.stats import chi2, norm
 
 
 @dataclass(frozen=True)
@@ -25,6 +25,16 @@ class TestResult:
     df: int
     valid: bool = True
     note: str = ""
+
+
+@dataclass(frozen=True)
+class DMResult:
+    """Diebold-Mariano statistic for two loss series."""
+
+    statistic: float
+    p_value: float
+    mean_difference: float
+    lags: int
 
 
 def _as_violations(
@@ -179,4 +189,156 @@ def christoffersen_conditional_coverage(
         statistic=statistic,
         p_value=float(chi2.sf(statistic, 2)),
         df=2,
+    )
+
+
+def quantile_loss(
+    returns: Sequence[float] | np.ndarray,
+    var_forecasts: Sequence[float] | np.ndarray,
+    level: float = 0.95,
+) -> np.ndarray:
+    """Quantile loss for a positive-loss VaR forecast.
+
+    With ``q_t = -VaR_t`` and ``tau = 1 - level``:
+
+        rho_tau(R_t - q_t) = (tau - 1{R_t < q_t}) (R_t - q_t)
+    """
+    level = float(level)
+    if not 0.0 < level < 1.0:
+        raise ValueError("level must be strictly between 0 and 1")
+    values = np.asarray(returns, dtype=float)
+    forecasts = np.asarray(var_forecasts, dtype=float)
+    if values.ndim != 1 or forecasts.ndim != 1:
+        raise ValueError("returns and var_forecasts must be one-dimensional")
+    if values.size != forecasts.size:
+        raise ValueError("returns and var_forecasts must have the same length")
+    if values.size < 2:
+        raise ValueError("at least two observations are required")
+    if not np.isfinite(values).all() or not np.isfinite(forecasts).all():
+        raise ValueError("returns and var_forecasts must be finite")
+
+    quantiles = -forecasts
+    tau = 1.0 - level
+    hits = (values < quantiles).astype(float)
+    return (tau - hits) * (values - quantiles)
+
+
+def diebold_mariano(
+    loss_a: Sequence[float] | np.ndarray,
+    loss_b: Sequence[float] | np.ndarray,
+    *,
+    lags: int = 5,
+) -> DMResult:
+    """Diebold-Mariano test for two loss series.
+
+    The long-run variance uses a Newey-West estimator with ``lags`` lags. The
+    p-value is two-sided from the standard normal distribution. A negative
+    mean difference favors the first loss series.
+    """
+    first = np.asarray(loss_a, dtype=float)
+    second = np.asarray(loss_b, dtype=float)
+    if first.ndim != 1 or second.ndim != 1:
+        raise ValueError("losses must be one-dimensional")
+    if first.size != second.size:
+        raise ValueError("losses must have the same length")
+    if first.size < 2:
+        raise ValueError("at least two observations are required")
+    if not np.isfinite(first).all() or not np.isfinite(second).all():
+        raise ValueError("losses must be finite")
+    if isinstance(lags, bool) or not isinstance(lags, int) or lags < 0:
+        raise ValueError("lags must be a non-negative integer")
+    if first.size <= lags + 1:
+        raise ValueError("the sample must be longer than lags + 1")
+
+    difference = first - second
+    mean_difference = float(difference.mean())
+    if np.allclose(difference, 0.0):
+        return DMResult(
+            statistic=0.0,
+            p_value=1.0,
+            mean_difference=0.0,
+            lags=lags,
+        )
+
+    centered = difference - mean_difference
+    long_run_variance = float(np.mean(centered**2))
+    for lag in range(1, lags + 1):
+        covariance = float(np.mean(centered[lag:] * centered[:-lag]))
+        weight = 1.0 - lag / (lags + 1.0)
+        long_run_variance += 2.0 * weight * covariance
+    if long_run_variance <= 0:
+        raise ValueError("the long-run variance is not positive")
+
+    statistic = mean_difference / np.sqrt(long_run_variance / first.size)
+    p_value = float(2.0 * norm.sf(abs(statistic)))
+    return DMResult(
+        statistic=float(statistic),
+        p_value=p_value,
+        mean_difference=mean_difference,
+        lags=lags,
+    )
+
+
+def holm_bonferroni(p_values: Sequence[float] | np.ndarray) -> np.ndarray:
+    """Holm-Bonferroni adjusted p-values in the original order."""
+    values = np.asarray(p_values, dtype=float)
+    if values.ndim != 1 or values.size < 1:
+        raise ValueError("p_values must be a non-empty one-dimensional array")
+    if not np.isfinite(values).all():
+        raise ValueError("p_values must be finite")
+    if ((values < 0.0) | (values > 1.0)).any():
+        raise ValueError("p_values must be between 0 and 1")
+
+    order = np.argsort(values, kind="stable")
+    adjusted = np.empty(values.size, dtype=float)
+    m = values.size
+    running = 0.0
+    for rank, index in enumerate(order):
+        candidate = min(1.0, (m - rank) * values[index])
+        running = max(running, candidate)
+        adjusted[index] = running
+    return adjusted
+
+
+def block_bootstrap_mean_ci(
+    values: Sequence[float] | np.ndarray,
+    *,
+    block_length: int = 20,
+    n_boot: int = 10_000,
+    seed: int | None = 42,
+    confidence: float = 0.95,
+) -> tuple[float, float]:
+    """Moving block bootstrap percentile interval for the mean."""
+    sample = np.asarray(values, dtype=float)
+    if sample.ndim != 1 or sample.size < 2:
+        raise ValueError("values must be a one-dimensional array with two values")
+    if not np.isfinite(sample).all():
+        raise ValueError("values must be finite")
+    if isinstance(block_length, bool) or not isinstance(block_length, int):
+        raise ValueError("block_length must be an integer")
+    if not 1 <= block_length <= sample.size:
+        raise ValueError("block_length must be between 1 and the sample size")
+    if isinstance(n_boot, bool) or not isinstance(n_boot, int) or n_boot < 1:
+        raise ValueError("n_boot must be a positive integer")
+    confidence = float(confidence)
+    if not 0.0 < confidence < 1.0:
+        raise ValueError("confidence must be strictly between 0 and 1")
+
+    rng = np.random.default_rng(seed)
+    n_blocks = int(np.ceil(sample.size / block_length))
+    offsets = np.arange(block_length)
+    means = np.empty(n_boot, dtype=float)
+    for index in range(n_boot):
+        starts = rng.integers(
+            0,
+            sample.size - block_length + 1,
+            size=n_blocks,
+        )
+        positions = (starts[:, None] + offsets[None, :]).ravel()[: sample.size]
+        means[index] = float(sample[positions].mean())
+
+    alpha = (1.0 - confidence) / 2.0
+    return (
+        float(np.quantile(means, alpha, method="linear")),
+        float(np.quantile(means, 1.0 - alpha, method="linear")),
     )

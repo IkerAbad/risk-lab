@@ -148,6 +148,118 @@ Joint conditional coverage test. The statistic is `LR_uc + LR_ind` and the
 p-value comes from chi-square with two degrees of freedom. Returns `valid=False`
 and NaN when the independence component is undefined.
 
+## Conditional volatility and comparison
+
+### `GarchParams`
+
+Frozen dataclass with `omega`, `alpha`, `beta`, `mean`, `initial_variance` and
+`converged`.
+
+### `ewma_variance(returns, lam=0.94, initial_variance=None)`
+
+Exponentially weighted conditional variance for each return using data through
+the previous day. The recursion is
+`v_t = lam v_t-1 + (1-lam) r_t-1^2`. The first value is the initial variance.
+
+### `ewma_forecast(returns, lam=0.94, initial_variance=None)`
+
+One-step EWMA variance forecast after the last return in the window.
+
+### `fit_garch11(returns, *, mean=None)`
+
+Gaussian quasi-maximum-likelihood estimate of a GARCH(1,1) model with a
+constant mean. Three starting points are tried. If every optimization fails,
+the function returns the pre-registered fallback with `converged=False`.
+
+### `garch_variance(returns, params)`
+
+In-sample GARCH(1,1) variance path. Raises `ValueError` for invalid parameters
+or non-positive variances.
+
+### `garch_forecast(returns, params)`
+
+One-step GARCH variance forecast after the last return.
+
+### `conditional_normal_risk(mean, volatility, level=0.95)`
+
+Normal VaR and CVaR from a conditional mean and volatility. Returns a
+`RiskEstimate` with positive losses.
+
+### `standardized_residuals(returns, variance, mean=0.0)`
+
+Standardize returns by the conditional standard deviation. Used by filtered
+historical simulation.
+
+### `fhs_risk(mean, volatility, residuals, level=0.95, *, n_scenarios=10_000, seed=42)`
+
+Filtered historical simulation VaR and ES for one day. Resamples the
+standardized residuals with replacement and scales them by the conditional
+volatility.
+
+### `DMResult`
+
+Frozen dataclass with `statistic`, `p_value`, `mean_difference` and `lags`.
+
+### `quantile_loss(returns, var_forecasts, level=0.95)`
+
+Asymmetric quantile loss for a positive-loss VaR forecast. The return quantile
+is `q_t = -VaR_t` and `tau = 1 - level`.
+
+### `diebold_mariano(loss_a, loss_b, *, lags=5)`
+
+Diebold-Mariano test for two loss series, with a Newey-West long-run variance
+and a two-sided normal p-value. A negative mean difference favors the first
+series.
+
+### `holm_bonferroni(p_values)`
+
+Holm-Bonferroni adjusted p-values in the original order.
+
+### `block_bootstrap_mean_ci(values, *, block_length=20, n_boot=10_000, seed=42, confidence=0.95)`
+
+Moving block bootstrap percentile interval for the mean of a series.
+
+### `adaptive_window(returns, position, *, short=20, long=250, threshold=1.25, default=500)`
+
+Return 250 when the short/long realized volatility ratio is at least 1.25,
+otherwise 500.
+
+### `conditional_backtest(returns, *, level=0.95, window=500, garch_refit=21, ewma_lambda=0.94, adaptive_short=20, adaptive_long=250, adaptive_threshold=1.25, n_scenarios=10_000, seed=42)`
+
+Run the six pre-registered models on the same one-day forecasts. Returns a
+DataFrame with the realized return, the adaptive window, the EWMA and GARCH
+volatilities, and the VaR, CVaR, simulated ES and violation flag of each model.
+
+### `model_losses(backtest, *, level=0.95)`
+
+Quantile losses for every model in the comparison.
+
+### `conditional_summary(backtest, *, level=0.95)`
+
+Coverage tests, mean quantile loss and mean risk for every model.
+
+### `pairwise_dm(backtest, *, level=0.95, lags=5)`
+
+All 15 pairwise Diebold-Mariano tests with raw and Holm-adjusted p-values.
+
+### `winner_decision(summary, pairwise, *, alpha=0.05)`
+
+Apply the pre-registered winner rule. Returns the best model, the runner-up,
+the Holm-adjusted p-value and a boolean `clear_winner`.
+
+### `stress_year_table(backtest, *, level=0.95, years=(2020, 2022, 2026))`
+
+Coverage and mean quantile loss by pre-registered stress year.
+
+### `es_table(backtest, *, level=0.95, block_length=20, n_boot=10_000, seed=42)`
+
+Mean model CVaR and mean simulated ES for each model, with block-bootstrap
+confidence intervals.
+
+### `MODELS`
+
+Tuple with the six model names used in the conditional comparison.
+
 ## Plots
 
 ### `plot_returns_with_violations(backtest, *, method="historical", level=0.95, path=None, figsize=(11.0, 4.5))`
@@ -164,3 +276,15 @@ saved at 150 dpi and the parent directory is created.
 Plot the realized loss against the rolling VaR from every method present in the
 frame. Missing methods are skipped. Returns the Matplotlib figure and saves it
 when `path` is given.
+
+### `plot_conditional_var(backtest, *, level=0.95, path=None, figsize=(11.0, 4.5))`
+
+Plot the realized loss against the main conditional models: historical 500,
+parametric 500, EWMA, GARCH(1,1) and the adaptive historical window. Returns
+the Matplotlib figure and saves it when `path` is given.
+
+### `plot_es_ci(es_table, *, level=0.95, path=None, figsize=(10.0, 4.5))`
+
+Plot the mean simulated ES with its block-bootstrap interval and the model CVaR
+as a marker. Returns the Matplotlib figure and saves it when `path` is given.
+

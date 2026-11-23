@@ -3,6 +3,46 @@
 All notable changes to this project are documented in this file. The format
 follows Keep a Changelog and the project uses semantic versioning.
 
+## [1.0.0] - 2026-11-23
+
+### Added
+
+- `risk_lab.conditional`: EWMA variance with λ = 0.94, GARCH(1,1) Gaussian
+  quasi-maximum-likelihood fit with a 21-day refit cycle, conditional normal
+  VaR and CVaR, standardized residuals and filtered historical simulation.
+- `risk_lab.comparison`: six-model walk-forward comparison (`hist500`,
+  `param500`, `ewma`, `garch`, `hist_adaptive`, `param_adaptive`), coverage
+  summary, quantile losses, 15 pairwise Diebold-Mariano tests with the
+  Holm-Bonferroni correction, stress-year table, ES block-bootstrap table and
+  the pre-registered winner decision.
+- `risk_lab.stats`: `quantile_loss`, `diebold_mariano`, `holm_bonferroni`,
+  `block_bootstrap_mean_ci` and `DMResult`.
+- `scripts/make_conditional_analysis.py`, which regenerates the five
+  `conditional_*.csv` files and figures 3 and 4.
+- `docs/results_conditional.md` with the 95% and 99% tables, the ES
+  bootstrap intervals, the stress years and the honest conclusion.
+- Figures 3 and 4, and the new columns in `docs/api.md`,
+  `docs/data_dictionary.md`, `docs/architecture.md`, `docs/decisions.md`,
+  `docs/glossary.md` and `docs/reproducibility.md`.
+- Pre-registered protocol in `docs/methodology.md` section 10, committed as
+  `78143d0` before the results were computed.
+
+### Changed
+
+- 182 tests and 100% statement coverage.
+- Version bumped to 1.0.0.
+
+### Notes
+
+- At 95%, GARCH(1,1) and EWMA pass Kupiec, Christoffersen and conditional
+  coverage. The fixed and adaptive historical and parametric models fail
+  independence.
+- The pre-registered winner rule returns no clear winner between GARCH(1,1)
+  and EWMA: the Holm-adjusted Diebold-Mariano p-value is 0.7039.
+- At 99%, GARCH(1,1) and EWMA fail Kupiec. No model passes coverage and
+  independence at the same time.
+- No existing table or figure changes. `data/prices.csv` is unchanged.
+
 ## [0.2.10] - 2026-11-23
 
 ### Fixed

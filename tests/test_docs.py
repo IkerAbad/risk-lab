@@ -13,6 +13,7 @@ DOCUMENTS = [
     "SECURITY.md",
     "docs/methodology.md",
     "docs/results.md",
+    "docs/results_conditional.md",
     "docs/api.md",
     "docs/architecture.md",
     "docs/decisions.md",
@@ -64,6 +65,37 @@ def test_results_page_99_percent_table_matches_the_sensitivity_csv():
         assert f"| {label} | {violations} |" in results
 
 
+def test_conditional_tables_match_the_summary_csv():
+    summary = pd.read_csv(ROOT / "docs" / "conditional_summary.csv")
+    subset = summary[summary["level"] == 0.95]
+    labels = {
+        "hist500": "Historical 500",
+        "param500": "Parametric 500",
+        "ewma": "EWMA",
+        "garch": "GARCH(1,1)",
+        "hist_adaptive": "Historical adaptive",
+        "param_adaptive": "Parametric adaptive",
+    }
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    results = (ROOT / "docs" / "results_conditional.md").read_text(encoding="utf-8")
+    for _, row in subset.iterrows():
+        prefix = (
+            f"| {labels[row['model']]} | {int(row['violations'])} | "
+            f"{row['expected']:.1f} | {row['violation_rate']:.2%} |"
+        )
+        assert prefix in readme, prefix
+        assert prefix in results, prefix
+
+
+def test_conditional_es_table_matches_the_csv():
+    table = pd.read_csv(ROOT / "docs" / "conditional_es.csv")
+    results = (ROOT / "docs" / "results_conditional.md").read_text(encoding="utf-8")
+    for _, row in table.iterrows():
+        assert f"{row['mean_cvar']:.4%}" in results
+        interval = f"[{row['es_ci_low']:.4%}, {row['es_ci_high']:.4%}]"
+        assert interval in results, interval
+
+
 def test_data_quality_report_matches_the_snapshot():
     report = (ROOT / "docs" / "data_quality.md").read_text(encoding="utf-8")
     assert "| Rows | 2513 |" in report
@@ -89,6 +121,11 @@ def test_data_dictionary_covers_every_csv_column():
         ROOT / "docs" / "backtest_series.csv",
         ROOT / "docs" / "sensitivity.csv",
         ROOT / "docs" / "violations_by_year.csv",
+        ROOT / "docs" / "conditional_summary.csv",
+        ROOT / "docs" / "conditional_dm.csv",
+        ROOT / "docs" / "conditional_stress.csv",
+        ROOT / "docs" / "conditional_es.csv",
+        ROOT / "docs" / "conditional_series_95.csv",
     ]
     for path in files:
         for column in pd.read_csv(path, nrows=0).columns:

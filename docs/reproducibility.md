@@ -54,9 +54,16 @@ file after a deliberate change.
 ## Determinism
 
 - The main window is 500 days. The extended analysis uses 250, 500 and 750.
-- The main level is 95%. The extended analysis also uses 99%.
+- The main level is 95%. The extended analysis also uses 99%. The conditional
+  comparison runs both levels.
 - The Monte Carlo run uses 100,000 scenarios and seed 42. A forecast at integer
   position `i` uses `seed + i`.
+- The filtered historical simulation uses 10,000 resamples and seed 42. A
+  forecast at integer position `i` uses `seed + i`.
+- The ES block bootstrap uses 10,000 resamples, block length 20 and seed 42.
+- The EWMA λ is 0.94 and the GARCH(1,1) model is refit every 21 days.
+- The adaptive window is 250 days when the 20-day/250-day volatility ratio is
+  at least 1.25, and 500 days otherwise.
 - The empirical quantile uses linear interpolation.
 - The figures and tables have no timestamps, so the bytes do not depend on the
   run date.
@@ -71,12 +78,14 @@ and the mutation smoke test.
 python -m pytest -q --cov=risk_lab --cov-report=term-missing
 python scripts/make_figures.py
 python scripts/make_extended_analysis.py
+python scripts/make_conditional_analysis.py
 python scripts/data_quality.py
 python scripts/check_all.py
 ```
 
 The main pipeline takes about 11 seconds. The extended analysis takes about 63
-seconds. Both runtimes are on the machine used to build the snapshot.
+seconds. The conditional comparison takes about 34 seconds. All runtimes are
+on the machine used to build the snapshot.
 
 ## Data source
 

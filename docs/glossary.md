@@ -31,3 +31,31 @@
   committed snapshot uses adjusted closes.
 - **Seed.** The integer that makes a Monte Carlo run reproducible. The main
   run uses seed 42 and adds the forecast position.
+- **EWMA (exponentially weighted moving average).** A variance recursion that
+  gives more weight to recent returns. The weight of older observations decays
+  by λ each day. The comparison uses λ = 0.94 and a zero mean.
+- **GARCH(1,1).** A model in which today's variance depends on the last squared
+  shock and on yesterday's variance: `σ²_t = ω + α ε²_{t-1} + β σ²_{t-1}`. The
+  parameters are estimated by quasi-maximum likelihood.
+- **Conditional volatility.** A volatility estimate that changes with the
+  information available before each forecast, instead of being constant over
+  the sample.
+- **Adaptive window.** A rolling window that switches between 250 and 500 days
+  when the ratio of 20-day to 250-day realized volatility crosses 1.25.
+- **Filtered historical simulation (FHS).** A method that standardizes past
+  returns by their conditional volatility, resamples the standardized
+  residuals and rescales them by the current volatility forecast.
+- **Quantile loss.** An asymmetric loss for a quantile forecast. It penalizes
+  VaR forecasts that are too low more heavily than forecasts that are too high.
+  The comparison uses it to rank models.
+- **Diebold-Mariano test.** A test of equal predictive accuracy for two loss
+  series, using a Newey-West estimate of the long-run variance.
+- **Holm-Bonferroni correction.** A multiple-testing correction that sorts the
+  p-values and multiplies each by its rank, enforcing monotonicity. It controls
+  the family-wise error rate without assuming independence.
+- **Moving block bootstrap.** A resampling method that draws contiguous blocks
+  of a time series to preserve short-range dependence. The ES intervals use
+  blocks of 20 days.
+- **Pre-registration.** Writing and committing the model list, the tests and
+  the decision rule before looking at the results, so the conclusion cannot be
+  chosen after the fact.

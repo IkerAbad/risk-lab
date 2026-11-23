@@ -21,14 +21,15 @@ def _load_script(name: str):
 
 make_figures = _load_script("make_figures")
 make_extended = _load_script("make_extended_analysis")
+make_conditional = _load_script("make_conditional_analysis")
 check_all = _load_script("check_all")
 data_quality = _load_script("data_quality")
 
 
-def _write_prices(path: Path) -> None:
+def _write_prices(path: Path, periods: int = 120) -> None:
     rng = np.random.default_rng(1)
-    dates = pd.bdate_range("2024-01-02", periods=120)
-    values = 100.0 * np.cumprod(1.0 + rng.normal(0.0005, 0.01, size=(120, 3)), axis=0)
+    dates = pd.bdate_range("2024-01-02", periods=periods)
+    values = 100.0 * np.cumprod(1.0 + rng.normal(0.0005, 0.01, size=(periods, 3)), axis=0)
     frame = pd.DataFrame(values, index=dates, columns=["SPY", "TLT", "GLD"])
     frame.index.name = "Date"
     frame.to_csv(path, float_format="%.6f")
@@ -209,3 +210,55 @@ def test_build_data_quality_report_contains_the_metrics():
     assert "| Rows | 3 |" in report
     assert "| A | 100.00 | 99.00 | 99.00 | 110.00 |" in report
     assert "| 2024 | 3 |" in report
+
+
+def test_conditional_analysis_end_to_end(tmp_path):
+    data = tmp_path / "prices.csv"
+    docs = tmp_path / "docs"
+    _write_prices(data, periods=700)
+
+    code = make_conditional.main(
+        [
+            "--data",
+            str(data),
+            "--docs",
+            str(docs),
+            "--scenarios",
+            "20",
+            "--n-boot",
+            "50",
+            "--garch-refit",
+            "100",
+        ]
+    )
+
+    assert code == 0
+    summary = pd.read_csv(docs / "conditional_summary.csv")
+    assert set(summary["level"]) == {0.95, 0.99}
+    assert len(summary) == 12
+    for name in (
+        "conditional_dm.csv",
+        "conditional_stress.csv",
+        "conditional_es.csv",
+        "conditional_series_95.csv",
+        "fig3_conditional_var.png",
+        "fig4_es_ci.png",
+    ):
+        assert (docs / name).exists(), name
+
+
+def test_conditional_analysis_reports_a_clean_error(tmp_path, capsys):
+    code = make_conditional.main(
+        [
+            "--data",
+            str(tmp_path / "missing.csv"),
+            "--docs",
+            str(tmp_path / "docs"),
+            "--scenarios",
+            "10",
+            "--n-boot",
+            "10",
+        ]
+    )
+    assert code == 1
+    assert "error:" in capsys.readouterr().err

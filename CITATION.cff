@@ -4,13 +4,15 @@ title: "risk-lab: One-day VaR and CVaR for a three-asset portfolio"
 abstract: >-
   One-day Value at Risk and Conditional Value at Risk for a fixed
   three-asset portfolio of SPY, TLT and GLD, with a walk-forward backtest,
-  Kupiec and Christoffersen coverage tests, and a reproducible data snapshot.
+  Kupiec and Christoffersen coverage tests, a pre-registered comparison of
+  historical, parametric, EWMA, GARCH(1,1) and adaptive-window models with
+  Diebold-Mariano tests, and a reproducible data snapshot.
 authors:
   - family-names: Abad
     given-names: Iker
     alias: IkerAbad
-version: 0.2.10
-date-released: 2026-11-22
+version: 1.0.0
+date-released: 2026-11-23
 license: MIT
 repository-code: https://github.com/IkerAbad/risk-lab
 url: https://github.com/IkerAbad/risk-lab
@@ -21,4 +23,6 @@ keywords:
   - backtesting
   - Kupiec
   - Christoffersen
+  - GARCH
+  - EWMA
   - quantitative finance

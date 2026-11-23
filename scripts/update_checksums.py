@@ -13,11 +13,18 @@ ROOT = Path(__file__).resolve().parents[1]
 OUTPUTS: tuple[str, ...] = (
     "fig1_returns_violations.png",
     "fig2_rolling_var.png",
+    "fig3_conditional_var.png",
+    "fig4_es_ci.png",
     "full_sample_risk.csv",
     "backtest_summary.csv",
     "backtest_series.csv",
     "sensitivity.csv",
     "violations_by_year.csv",
+    "conditional_summary.csv",
+    "conditional_dm.csv",
+    "conditional_stress.csv",
+    "conditional_es.csv",
+    "conditional_series_95.csv",
     "data_quality.md",
 )
 

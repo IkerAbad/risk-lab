@@ -1,6 +1,28 @@
 """Risk Lab: one-day VaR and CVaR with a rolling backtest."""
 
 from .backtest import rolling_backtest, summarize_backtest, violations_by_year
+from .comparison import (
+    MODELS,
+    adaptive_window,
+    conditional_backtest,
+    conditional_summary,
+    es_table,
+    model_losses,
+    pairwise_dm,
+    stress_year_table,
+    winner_decision,
+)
+from .conditional import (
+    GarchParams,
+    conditional_normal_risk,
+    ewma_forecast,
+    ewma_variance,
+    fhs_risk,
+    fit_garch11,
+    garch_forecast,
+    garch_variance,
+    standardized_residuals,
+)
 from .data import (
     DEFAULT_TICKERS,
     DEFAULT_WEIGHTS,
@@ -9,11 +31,22 @@ from .data import (
     portfolio_returns,
     weights_vector,
 )
+from .plots import (
+    plot_conditional_var,
+    plot_es_ci,
+    plot_returns_with_violations,
+    plot_rolling_var,
+)
 from .stats import (
+    DMResult,
     TestResult,
+    block_bootstrap_mean_ci,
     christoffersen_conditional_coverage,
     christoffersen_independence,
+    diebold_mariano,
+    holm_bonferroni,
     kupiec_pof,
+    quantile_loss,
 )
 from .var import (
     RiskEstimate,
@@ -32,28 +65,55 @@ from .var import (
 __all__ = [
     "DEFAULT_TICKERS",
     "DEFAULT_WEIGHTS",
+    "DMResult",
+    "GarchParams",
+    "MODELS",
     "RiskEstimate",
     "TestResult",
+    "adaptive_window",
+    "block_bootstrap_mean_ci",
     "christoffersen_conditional_coverage",
     "christoffersen_independence",
     "compute_returns",
+    "conditional_backtest",
+    "conditional_normal_risk",
+    "conditional_summary",
+    "diebold_mariano",
+    "es_table",
+    "ewma_forecast",
+    "ewma_variance",
+    "fhs_risk",
+    "fit_garch11",
+    "garch_forecast",
+    "garch_variance",
     "historical_cvar",
     "historical_risk",
     "historical_var",
+    "holm_bonferroni",
     "kupiec_pof",
     "load_prices",
+    "model_losses",
     "monte_carlo_cvar",
     "monte_carlo_risk",
     "monte_carlo_var",
+    "pairwise_dm",
     "parametric_cvar",
     "parametric_risk",
     "parametric_var",
+    "plot_conditional_var",
+    "plot_es_ci",
+    "plot_returns_with_violations",
+    "plot_rolling_var",
     "portfolio_returns",
+    "quantile_loss",
     "rolling_backtest",
     "simulate_portfolio_returns",
+    "standardized_residuals",
+    "stress_year_table",
     "summarize_backtest",
     "violations_by_year",
     "weights_vector",
+    "winner_decision",
 ]
 
-__version__ = "0.2.10"
+__version__ = "1.0.0"

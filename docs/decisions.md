@@ -109,3 +109,42 @@ p-value tail and a wrong violation comparison all fail the suite.
 **Consequence.** New untested lines fail CI. The mutation checks are a small,
 fixed set, not a full mutation campaign. They catch common regressions in the
 core risk logic.
+
+## D10. Pre-registered conditional volatility protocol
+
+**Decision.** Write the six-model comparison protocol in
+`docs/methodology.md` section 10 and commit it before computing any comparison
+result. The protocol fixes the models, the EWMA λ = 0.94, the GARCH(1,1)
+settings, the adaptive rule, the quantile loss, the 15 pairwise
+Diebold-Mariano tests with 5 Newey-West lags, the Holm correction, the block
+bootstrap and the winner rule.
+
+**Context.** The earlier 750-day window was chosen after looking at the
+results, and that pass is exploratory. Repeating that pattern with EWMA,
+GARCH and adaptive windows would produce a result that cannot be distinguished
+from a search over specifications.
+
+**Consequence.** The protocol commit is `78143d0`. The winner rule requires
+the best model to beat the second-best with a Holm-adjusted p-value below
+0.05. On the committed snapshot the rule returns no clear winner between
+GARCH(1,1) and EWMA. The repository keeps that result instead of promoting
+the lowest point estimate.
+
+## D11. Conditional normal risk and filtered historical ES
+
+**Decision.** Use the conditional normal VaR and CVaR for the EWMA, GARCH and
+parametric models, and filtered historical simulation for the ES of the
+historical and adaptive models.
+
+**Context.** EWMA and GARCH estimate a conditional variance but not a full
+conditional distribution. The normal quantile is the simplest choice and
+matches the existing parametric method. For the historical models, the
+unconditional empirical tail does not respond to the volatility forecast, so
+the ES is built by rescaling the standardized residuals to the current
+volatility.
+
+**Consequence.** At 99%, the conditional normal models still fail Kupiec. The
+filtered historical ES is more responsive than the raw empirical tail but
+still assumes that the standardized residuals are independent and identically
+distributed. The ES bootstrap uses moving blocks of 20 days and does not
+capture longer dependence.

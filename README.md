@@ -22,6 +22,7 @@ risk-lab/
 ├── docs/
 │   ├── methodology.md
 │   ├── results.md
+│   ├── results_conditional.md
 │   ├── api.md
 │   ├── architecture.md
 │   ├── decisions.md
@@ -33,15 +34,23 @@ risk-lab/
 │   ├── checksums.sha256
 │   ├── fig1_returns_violations.png
 │   ├── fig2_rolling_var.png
+│   ├── fig3_conditional_var.png
+│   ├── fig4_es_ci.png
 │   ├── full_sample_risk.csv
 │   ├── backtest_summary.csv
 │   ├── backtest_series.csv
 │   ├── sensitivity.csv
-│   └── violations_by_year.csv
+│   ├── violations_by_year.csv
+│   ├── conditional_summary.csv
+│   ├── conditional_dm.csv
+│   ├── conditional_stress.csv
+│   ├── conditional_es.csv
+│   └── conditional_series_95.csv
 ├── scripts/
 │   ├── download_data.py
 │   ├── make_figures.py
 │   ├── make_extended_analysis.py
+│   ├── make_conditional_analysis.py
 │   ├── data_quality.py
 │   ├── mutation_smoke.py
 │   ├── update_checksums.py
@@ -50,6 +59,8 @@ risk-lab/
 │   ├── data.py
 │   ├── var.py
 │   ├── backtest.py
+│   ├── conditional.py
+│   ├── comparison.py
 │   ├── stats.py
 │   ├── plots.py
 │   └── py.typed
@@ -57,6 +68,8 @@ risk-lab/
 │   ├── test_data.py
 │   ├── test_var.py
 │   ├── test_backtest.py
+│   ├── test_conditional.py
+│   ├── test_comparison.py
 │   ├── test_stats.py
 │   ├── test_plots.py
 │   ├── test_download.py
@@ -192,6 +205,51 @@ CVaR_t = -mean(R_p^(s) | R_p^(s) <= Q_{1-α})
 rolling backtest the seed for forecast day t is 42 plus the integer position
 of t in the return array, so every day has a deterministic and independent
 stream. The committed results use 100,000 scenarios per day.
+
+### Conditional volatility
+
+The comparison adds four models that let the volatility change over time. They
+were fixed in `docs/methodology.md`, section 10, before the results were
+computed.
+
+EWMA variance with λ = 0.94 and zero mean:
+
+```text
+v_t = λ v_{t-1} + (1 - λ) R_{t-1}^2
+```
+
+The first variance is the sample variance of the first 500 returns. The
+one-day forecast is v_t after the last return in the window.
+
+GARCH(1,1) with a constant mean:
+
+```text
+R_t   = μ + ε_t,   ε_t = σ_t z_t,   z_t ~ N(0, 1)
+σ²_t  = ω + α ε²_{t-1} + β σ²_{t-1}
+```
+
+The parameters are estimated by Gaussian quasi-maximum likelihood on the 500
+returns before the forecast date, with the constraint α + β < 1. The fit is
+repeated every 21 days and the parameters are held fixed in between. The
+starting values are 5% of the window variance for ω and 0.05, 0.90 for α, β.
+If the optimizer fails, the model falls back to α = 0.05 and β = 0.90.
+
+The adaptive window uses 250 days when the 20-day realized volatility divided
+by the 250-day realized volatility is at least 1.25, and 500 days otherwise.
+It is applied to the historical and the parametric estimator.
+
+Conditional VaR and CVaR use the conditional mean and volatility:
+
+```text
+VaR_t  = -(μ_t + σ_t z_{1-α})
+CVaR_t = -μ_t + σ_t φ(z_{1-α}) / (1 - α)
+```
+
+The expected shortfall of the historical and adaptive models is estimated by
+filtered historical simulation. The standardized residuals of the window,
+`(R_s - μ_s) / σ_s`, are resampled 10,000 times with replacement, scaled by
+the one-day volatility forecast and averaged over the tail. The seed is 42
+plus the forecast position.
 
 ## Backtest design
 
@@ -331,6 +389,62 @@ The full tables are in [docs/results.md](docs/results.md). The key results:
 The yearly counts are in `docs/violations_by_year.csv`. The full sensitivity
 table is `docs/sensitivity.csv`.
 
+### Conditional volatility comparison
+
+The protocol for this comparison is section 10 of
+[docs/methodology.md](docs/methodology.md), dated 2026-11-23 and committed
+before the results were computed. It fixes the six models, the EWMA λ, the
+GARCH settings, the adaptive rule, the quantile loss, the 15 pairwise
+Diebold-Mariano tests with Newey-West lags of 5, the Holm correction, the
+block bootstrap and the winner rule. The full tables are in
+[docs/results_conditional.md](docs/results_conditional.md).
+
+The evaluation period is the same 2,012 one-day forecasts from 2018-11-19 to
+2026-11-20. The quantile loss is the asymmetric loss for the return quantile
+`q_t = -VaR_t` with `τ = 0.05`, averaged over the sample. A lower value is
+better.
+
+| Model | Violations | Expected | Rate | Kupiec p | Christoffersen p | Conditional p | Mean loss (bp) | Rank |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| GARCH(1,1) | 102 | 100.6 | 5.07% | 0.8864 | 0.3916 | 0.6858 | 7.83 | 1 |
+| EWMA | 102 | 100.6 | 5.07% | 0.8864 | 0.9729 | 0.9893 | 8.08 | 2 |
+| Historical 500 | 120 | 100.6 | 5.96% | 0.0538 | 0.00168 | 0.00112 | 8.59 | 3 |
+| Parametric adaptive | 109 | 100.6 | 5.42% | 0.3963 | 0.00617 | 0.01642 | 8.62 | 4 |
+| Historical adaptive | 116 | 100.6 | 5.77% | 0.1237 | 0.00255 | 0.00323 | 8.63 | 5 |
+| Parametric 500 | 114 | 100.6 | 5.67% | 0.1791 | 0.000497 | 0.000944 | 8.63 | 6 |
+
+At 95%, conditional volatility fixes the independence failure. GARCH and EWMA
+pass Kupiec, Christoffersen and conditional coverage. The fixed and adaptive
+historical and parametric models still fail independence. The adaptive window
+changes little: the historical model moves from 120 to 116 violations and the
+parametric model from 114 to 109, with the same mean loss after rounding.
+
+The winner rule was fixed in the protocol: the best model wins only if the
+Holm-adjusted Diebold-Mariano p-value against the second-best is below 0.05.
+GARCH has the lowest mean loss and EWMA is second. The Holm-adjusted p-value
+for EWMA against GARCH is 0.7039, so the rule returns **no clear winner**. The
+raw p-value is 0.0640. The Holm correction over the 15 pairs raises the
+comparison against the fixed models from raw p-values of 0.036 and 0.022 to
+0.435 and 0.309. None of the pairwise differences survives the correction.
+
+At 99%, GARCH has 36 violations against 20.1 expected, Kupiec p = 0.00136,
+and EWMA has 42, Kupiec p = 0.000019. The historical models have 27 and 24
+violations, closer to 20.1, but fail independence. No model passes both tests
+at 99%. The lower mean loss of GARCH at 99% (2.38 bp against 2.56 bp for EWMA)
+does not make it a valid 99% model: the normal conditional tail is still too
+thin.
+
+The expected shortfall is in `docs/conditional_es.csv`. At 95%, the mean
+simulated ES is 1.4394% for GARCH, 1.5888% for EWMA and 1.5531% for the
+historical models. The block-bootstrap intervals overlap. At 99%, GARCH has a
+lower simulated ES (2.0611%) than EWMA (2.3208%). The GARCH interval overlaps
+the EWMA interval but not the historical intervals. GARCH also has too many VaR
+violations, so the lower tail mean is not evidence of a better model.
+
+The stress-year ranking is mixed. GARCH has the lowest mean loss in 2020,
+EWMA in 2022, and the parametric models in 2026. No model dominates the three
+years.
+
 ### Figures
 
 ![Portfolio returns and 95% VaR violations](docs/fig1_returns_violations.png)
@@ -345,11 +459,24 @@ Figure 2: realized daily loss against the rolling VaR from the three methods.
 The historical VaR is usually the lowest of the three. The parametric and Monte
 Carlo lines are nearly identical.
 
+![Conditional VaR comparison](docs/fig3_conditional_var.png)
+
+Figure 3: realized daily loss against the GARCH, EWMA, historical 500,
+parametric 500 and adaptive historical VaR at 95%.
+
+![Expected shortfall with bootstrap intervals](docs/fig4_es_ci.png)
+
+Figure 4: mean simulated ES at 95% for the six models, with 95% moving block
+bootstrap intervals. The black markers are the model CVaR.
+
 ## Documentation
 
 - [docs/methodology.md](docs/methodology.md): estimation and testing details.
 - [docs/results.md](docs/results.md): full tables for 95%, 99%, windows and
   calendar years.
+- [docs/results_conditional.md](docs/results_conditional.md): the
+  pre-registered conditional volatility comparison, expected shortfall with
+  bootstrap intervals and stress years.
 - [docs/api.md](docs/api.md): public functions, arguments and error conditions.
 - [docs/architecture.md](docs/architecture.md): module responsibilities, data
   flow and invariants.
@@ -437,6 +564,19 @@ This runs six backtests with 100,000 scenarios each. It took about 63 seconds
 on the machine used to build the snapshot and writes `docs/sensitivity.csv` and
 `docs/violations_by_year.csv`.
 
+Regenerate the conditional volatility comparison:
+
+```bash
+python scripts/make_conditional_analysis.py
+```
+
+This updates the EWMA and GARCH(1,1) variance at every forecast date, refits
+the GARCH parameters every 21 days, runs 10,000 filtered historical scenarios
+per day, computes 15 pairwise Diebold-Mariano tests with the Holm correction,
+and bootstraps the daily ES series. It took about 34 seconds on the machine
+used to build the snapshot and writes the five `docs/conditional_*.csv` files
+and figures 3 and 4.
+
 Regenerate the data quality report:
 
 ```bash
@@ -464,11 +604,18 @@ The pipeline writes:
 
 - `docs/fig1_returns_violations.png`
 - `docs/fig2_rolling_var.png`
+- `docs/fig3_conditional_var.png`
+- `docs/fig4_es_ci.png`
 - `docs/full_sample_risk.csv`
 - `docs/backtest_summary.csv`
 - `docs/backtest_series.csv`
 - `docs/sensitivity.csv`
 - `docs/violations_by_year.csv`
+- `docs/conditional_summary.csv`
+- `docs/conditional_dm.csv`
+- `docs/conditional_stress.csv`
+- `docs/conditional_es.csv`
+- `docs/conditional_series_95.csv`
 - `docs/data_quality.md`
 - `docs/checksums.sha256`
 
@@ -477,7 +624,7 @@ return, the three VaR and CVaR estimates, and the three violation flags.
 
 ## Tests
 
-The suite has 135 tests, grouped by module and by script:
+The suite has 182 tests, grouped by module and by script:
 
 - `tests/test_data.py`: price validation, simple and log returns, weighted
   portfolio returns, weight validation and the committed snapshot checksum.
@@ -485,14 +632,23 @@ The suite has 135 tests, grouped by module and by script:
   the parametric formula against μ + σ z, CVaR against a known tail mean, the
   normal CVaR closed form, Monte Carlo reproducibility with the same seed, and
   input validation.
-- `tests/test_stats.py`: Kupiec with N = 250, x = 10 and p0 = 0.05, whose
-  p-value is checked to 1e-6 against 0.4529124499351952, plus a known
-  Christoffersen independence case, a known conditional coverage case and the
-  undefined-state behaviour.
 - `tests/test_backtest.py`: no lookahead, the violation flag, summary counts,
   the Monte Carlo path, yearly violation counts and argument validation.
-- `tests/test_plots.py`: both figures are written, saved images are valid PNGs,
-  missing methods are skipped and missing columns are rejected.
+- `tests/test_conditional.py`: EWMA recursion and forecast, the GARCH
+  likelihood against a hand-computed path, parameter validation, the fallback,
+  conditional normal VaR and CVaR, standardized residuals, filtered historical
+  simulation and its seed.
+- `tests/test_comparison.py`: the adaptive window rule, the six-model backtest,
+  no lookahead, summary and loss tables, the 15 pairwise tests, the winner rule,
+  stress years, the ES table and the block bootstrap.
+- `tests/test_stats.py`: Kupiec with N = 250, x = 10 and p0 = 0.05, whose
+  p-value is checked to 1e-6 against 0.4529124499351952, plus a known
+  Christoffersen independence case, a known conditional coverage case, the
+  undefined-state behaviour, the quantile loss, the Diebold-Mariano test, the
+  Holm correction and the moving block bootstrap.
+- `tests/test_plots.py`: all four figures are written, saved images are valid
+  PNGs, missing methods are skipped, missing columns are rejected and the ES
+  interval diagnostics are checked.
 - `tests/test_download.py`: Stooq and Yahoo parsing with mocked HTTP responses,
   fallback behaviour, malformed payloads, the automatic fallback through the
   CLI and the command-line error path.
@@ -528,7 +684,7 @@ OpenSSF Scorecard run as separate workflows.
   A corrupted or accidentally regenerated snapshot fails the tests.
 - The committed figures and tables are checked against `docs/checksums.sha256`.
   The data dictionary covers every column in the CSV files.
-- The suite has 135 tests and 100% statement coverage of `src/risk_lab`. CI
+- The suite has 182 tests and 100% statement coverage of `src/risk_lab`. CI
   enforces a 100% threshold.
 - A minimum-dependency CI job checks the declared lower bounds: numpy 1.26.4,
   scipy 1.11.4, pandas 2.1.4 and matplotlib 3.8.4 on Python 3.12.
@@ -563,7 +719,7 @@ OpenSSF Scorecard run as separate workflows.
 - The repository has a local `pre-commit` configuration for `ruff`, `ruff
   format`, `mypy` and Bandit.
 - Dependabot keeps the GitHub Actions and the Python dependencies current.
-- The repository is versioned with tags. The current release is `v0.2.10`.
+- The repository is versioned with tags. The current release is `v1.0.0`.
 
 ## Limitations
 
@@ -573,12 +729,13 @@ OpenSSF Scorecard run as separate workflows.
   average tail loss by 0.225 percentage points. At 99%, the normal model
   produces about twice the expected number of violations at every window and
   Kupiec rejects it.
-- The main window is fixed at 500 days. It does not adapt to regime changes.
-  The 750-day normal model passes all three tests at 95%, so the window length
-  matters. That pass was selected after inspecting the results and is
-  exploratory, not a validated production choice. An exponentially weighted or
-  GARCH-based volatility model would react faster, but it would add parameters
-  and estimation risk.
+- The main window for the three original methods is fixed at 500 days and does
+  not adapt to regime changes. The 750-day normal model passes all three tests
+  at 95%, so the window length matters. That pass was selected after inspecting
+  the results and is exploratory, not a validated production choice. The
+  conditional comparison adds EWMA, GARCH(1,1) and an adaptive window. Those
+  models fix the 95% independence failure, but the pre-registered rule finds no
+  clear winner between GARCH and EWMA, and neither passes Kupiec at 99%.
 - The portfolio is static. Weights are rebalanced daily to 50/35/15 with no
   transaction costs, no taxes and no liquidity constraints. A real portfolio
   would drift between rebalances and pay to trade.
@@ -601,10 +758,21 @@ OpenSSF Scorecard run as separate workflows.
 - Monte Carlo does not add model diversity here. It simulates the same normal
   model as the parametric method, so the two sets of results are nearly
   identical. The simulation only adds sampling noise.
-- No multiple-testing correction is applied. The main table has nine tests and
-  the sensitivity analysis has 18 method-window-level combinations. The
-  750-day pass is exploratory. The 99% rejections are strong enough that a
-  multiple-testing correction does not change the conclusion.
+- No multiple-testing correction is applied to the original rolling tables.
+  The main table has nine tests and the sensitivity analysis has 18
+  method-window-level combinations. The 750-day pass is exploratory. The 99%
+  rejections are strong enough that a multiple-testing correction does not
+  change the conclusion. The conditional comparison is different: its protocol
+  was pre-registered, all 15 pairwise tests are Holm-corrected, and the winner
+  rule requires a corrected p-value below 0.05. That rule returns no clear
+  winner.
+- The conditional comparison uses one path of history and one portfolio. The
+  GARCH parameters are refit every 21 days with a Gaussian likelihood, so the
+  estimates are quasi-maximum likelihood, not a full Bayesian or
+  semiparametric treatment. The filtered historical simulation assumes the
+  standardized residuals are independent and identically distributed, which is
+  an approximation. The ES bootstrap resamples blocks of 20 days, so it does
+  not capture dependence beyond that block length.
 
 ## License
 
@@ -656,14 +824,30 @@ Resultados reales:
   en unidades de retorno, o 0,0202 puntos porcentuales, y las violaciones solo
   difieren en 2 de los 2.012 días.
 
+El análisis condicional añade EWMA con λ = 0,94, GARCH(1,1) con media constante
+y ventana adaptativa de 250 o 500 días. El protocolo se escribió y se commiteó
+antes de calcular los resultados. A 95%, GARCH y EWMA tienen 102 violaciones
+frente a 100,6 esperadas y pasan Kupiec, Christoffersen y cobertura
+condicional. Los modelos histórico y paramétrico, fijos y adaptativos, siguen
+fallando la independencia. La regla de ganador exige que el p-valor de
+Diebold-Mariano corregido por Holm contra el segundo sea menor que 0,05. GARCH
+tiene el menor error de cuantil medio (7,83 puntos básicos) y EWMA el segundo
+(8,08), pero el p-valor corregido es 0,7039: **no hay ganador claro**. A 99%,
+GARCH tiene 36 violaciones frente a 20,1 esperadas (Kupiec p = 0,00136) y EWMA
+42 (p = 0,000019). Ningún modelo pasa cobertura e independencia a la vez. El ES
+simulado medio al 95% es 1,4394% para GARCH, 1,5888% para EWMA y 1,5531% para
+los históricos, con intervalos bootstrap solapados. En los años de estrés el
+orden cambia: GARCH gana en 2020, EWMA en 2022 y los paramétricos en 2026.
+
 Limitaciones principales: la normalidad no recoge las colas gruesas (a 99%
 produce el doble de violaciones esperadas), la ventana fija no se adapta a los
 cambios de régimen, la cartera es estática y no paga costes, y los tests
 asintóticos tienen poca potencia en muestras pequeñas. No se maquillan los
-resultados: a 95% y 500 días los tres métodos fallan la independencia, y a 99%
-el modelo normal falla Kupiec.
+resultados: a 95% y 500 días los tres métodos originales fallan la
+independencia, a 99% el modelo normal falla Kupiec, y el análisis condicional
+no encuentra un ganador claro entre GARCH y EWMA.
 
-Robustez: 135 tests, 100% de cobertura, tests de propiedades, comprobación
+Robustez: 182 tests, 100% de cobertura, tests de propiedades, comprobación
 del checksum del CSV, informe de calidad de datos, paquete con `py.typed`, CI
 en Ubuntu, Windows y macOS con Python 3.12 y 3.14, job de versiones mínimas,
 wheel instalada, mutaciones, CodeQL, ruff, mypy, bandit y Dependabot.
@@ -677,4 +861,5 @@ python -m pip install -e ".[dev]"
 python -m pytest -q
 python scripts/make_figures.py
 python scripts/make_extended_analysis.py
+python scripts/make_conditional_analysis.py
 ```
