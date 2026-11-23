@@ -1,0 +1,30 @@
+name: Release
+
+"on":
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  wheel:
+    name: Build and attach the wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Build
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build --wheel
+      - name: Release
+        uses: softprops/action-gh-release@v3
+        with:
+          name: risk-lab ${{ github.ref_name }}
+          generate_release_notes: true
+          files: dist/*.whl

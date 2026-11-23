@@ -25,7 +25,10 @@ risk-lab/
 │   ├── api.md
 │   ├── architecture.md
 │   ├── decisions.md
+│   ├── data_dictionary.md
 │   ├── data_quality.md
+│   ├── reproducibility.md
+│   ├── checksums.sha256
 │   ├── fig1_returns_violations.png
 │   ├── fig2_rolling_var.png
 │   ├── full_sample_risk.csv
@@ -39,6 +42,7 @@ risk-lab/
 │   ├── make_extended_analysis.py
 │   ├── data_quality.py
 │   ├── mutation_smoke.py
+│   ├── update_checksums.py
 │   └── check_all.py
 ├── src/risk_lab/
 │   ├── data.py
@@ -62,7 +66,8 @@ risk-lab/
 │   ├── workflows/
 │   │   ├── ci.yml
 │   │   ├── codeql.yml
-│   │   └── dependency-review.yml
+│   │   ├── dependency-review.yml
+│   │   └── release.yml
 │   ├── CODEOWNERS
 │   ├── ISSUE_TEMPLATE/
 │   │   └── bug_report.yml
@@ -343,8 +348,12 @@ Carlo lines are nearly identical.
   flow and invariants.
 - [docs/decisions.md](docs/decisions.md): the main design decisions and their
   consequences.
+- [docs/data_dictionary.md](docs/data_dictionary.md): every column in the
+  committed CSV files.
 - [docs/data_quality.md](docs/data_quality.md): row counts, price ranges and
   return statistics of the committed snapshot.
+- [docs/reproducibility.md](docs/reproducibility.md): environment, commands,
+  checksums and determinism.
 - [CONTRIBUTING.md](CONTRIBUTING.md): setup, checks and how to add a method.
 - [CHANGELOG.md](CHANGELOG.md): version history.
 - [CITATION.cff](CITATION.cff): citation metadata.
@@ -423,6 +432,13 @@ Regenerate the data quality report:
 python scripts/data_quality.py
 ```
 
+Regenerate the output checksums after a deliberate change to the figures or
+tables:
+
+```bash
+python scripts/update_checksums.py
+```
+
 Refresh the price snapshot (needs network access):
 
 ```bash
@@ -443,13 +459,14 @@ The pipeline writes:
 - `docs/sensitivity.csv`
 - `docs/violations_by_year.csv`
 - `docs/data_quality.md`
+- `docs/checksums.sha256`
 
 `backtest_series.csv` contains one row per forecast date, with the realized
 return, the three VaR and CVaR estimates, and the three violation flags.
 
 ## Tests
 
-The suite has 130 tests, grouped by module and by script:
+The suite has 133 tests, grouped by module and by script:
 
 - `tests/test_data.py`: price validation, simple and log returns, weighted
   portfolio returns, weight validation and the committed snapshot checksum.
@@ -498,7 +515,9 @@ job runs `pip-audit`. CodeQL and dependency review run as separate workflows.
 
 - The committed CSV is checked against `data/prices.sha256` by the test suite.
   A corrupted or accidentally regenerated snapshot fails the tests.
-- The suite has 130 tests and 100% statement coverage of `src/risk_lab`. CI
+- The committed figures and tables are checked against `docs/checksums.sha256`.
+  The data dictionary covers every column in the CSV files.
+- The suite has 133 tests and 100% statement coverage of `src/risk_lab`. CI
   enforces a 100% threshold.
 - A minimum-dependency CI job checks the declared lower bounds: numpy 1.26.4,
   scipy 1.11.4, pandas 2.1.4 and matplotlib 3.8.4 on Python 3.12.
@@ -520,7 +539,8 @@ job runs `pip-audit`. CodeQL and dependency review run as separate workflows.
 - CI runs `ruff`, `mypy`, Bandit and the test suite on Ubuntu, Windows and
   macOS with Python 3.12 and 3.14.
 - CodeQL runs on every push, every pull request and once a week. Dependency
-  review runs on every pull request.
+  review runs on every pull request. A `v*` tag builds a wheel and attaches it
+  to the GitHub release.
 - `scripts/check_all.py` runs the checksum, `ruff`, `mypy`, Bandit and the test
   suite with coverage in one command.
 - `scripts/mutation_smoke.py` checks that the suite catches five source
@@ -529,7 +549,7 @@ job runs `pip-audit`. CodeQL and dependency review run as separate workflows.
 - The repository has a local `pre-commit` configuration for `ruff`, `ruff
   format`, `mypy` and Bandit.
 - Dependabot keeps the GitHub Actions and the Python dependencies current.
-- The repository is versioned with tags. The current release is `v0.2.6`.
+- The repository is versioned with tags. The current release is `v0.2.7`.
 
 ## Limitations
 
@@ -629,7 +649,7 @@ asintóticos tienen poca potencia en muestras pequeñas. No se maquillan los
 resultados: a 95% y 500 días los tres métodos fallan la independencia, y a 99%
 el modelo normal falla Kupiec.
 
-Robustez: 130 tests, 100% de cobertura, tests de propiedades, comprobación
+Robustez: 133 tests, 100% de cobertura, tests de propiedades, comprobación
 del checksum del CSV, informe de calidad de datos, paquete con `py.typed`, CI
 en Ubuntu, Windows y macOS con Python 3.12 y 3.14, job de versiones mínimas,
 wheel instalada, mutaciones, CodeQL, ruff, mypy, bandit y Dependabot.

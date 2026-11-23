@@ -1,3 +1,4 @@
+import hashlib
 import re
 from pathlib import Path
 
@@ -15,7 +16,9 @@ DOCUMENTS = [
     "docs/api.md",
     "docs/architecture.md",
     "docs/decisions.md",
+    "docs/data_dictionary.md",
     "docs/data_quality.md",
+    "docs/reproducibility.md",
 ]
 
 LINK = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
@@ -73,3 +76,42 @@ def test_architecture_and_decisions_documents_are_complete():
     decisions = (ROOT / "docs" / "decisions.md").read_text(encoding="utf-8")
     for term in ("positive losses", "50/35/15", "500-day", "Yahoo Finance"):
         assert term in decisions
+
+
+def test_data_dictionary_covers_every_csv_column():
+    dictionary = (ROOT / "docs" / "data_dictionary.md").read_text(encoding="utf-8")
+    files = [
+        ROOT / "data" / "prices.csv",
+        ROOT / "docs" / "full_sample_risk.csv",
+        ROOT / "docs" / "backtest_summary.csv",
+        ROOT / "docs" / "backtest_series.csv",
+        ROOT / "docs" / "sensitivity.csv",
+        ROOT / "docs" / "violations_by_year.csv",
+    ]
+    for path in files:
+        for column in pd.read_csv(path, nrows=0).columns:
+            assert f"`{column}`" in dictionary, f"{path.name}: {column}"
+
+
+def test_committed_outputs_match_checksums():
+    checksums = (ROOT / "docs" / "checksums.sha256").read_text(encoding="utf-8").splitlines()
+    assert checksums
+    for line in checksums:
+        if not line.strip():
+            continue
+        digest, filename = line.split()
+        target = ROOT / "docs" / filename
+        assert target.exists(), filename
+        assert hashlib.sha256(target.read_bytes()).hexdigest() == digest, filename
+
+
+def test_reproducibility_guide_mentions_the_key_checks():
+    guide = (ROOT / "docs" / "reproducibility.md").read_text(encoding="utf-8")
+    for term in (
+        "prices.sha256",
+        "checksums.sha256",
+        "scripts/check_all.py",
+        "seed 42",
+        "500",
+    ):
+        assert term in guide

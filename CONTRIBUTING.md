@@ -66,8 +66,8 @@ The committed file is `data/prices.csv`. If you refresh it:
 1. Run `python scripts/download_data.py`.
 2. Update the SHA-256 in `README.md`, `docs/methodology.md` and
    `data/prices.sha256`.
-3. Re-run `make_figures.py`, `make_extended_analysis.py` and
-   `data_quality.py`.
+3. Re-run `make_figures.py`, `make_extended_analysis.py`, `data_quality.py`
+   and `update_checksums.py`.
 4. Update every number in `README.md` and `docs/results.md`.
 5. State the data source and the download date in the commit message.
 
@@ -85,6 +85,11 @@ Update results after the 2026 data refresh
 
 Keep code, tests and documentation for the same change in one commit when
 possible.
+
+## Releases
+
+Push a `v*` tag. The release workflow builds the wheel and attaches it to the
+GitHub release with generated notes.
 
 ## Reporting a problem
 

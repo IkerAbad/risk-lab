@@ -3,6 +3,29 @@
 All notable changes to this project are documented in this file. The format
 follows Keep a Changelog and the project uses semantic versioning.
 
+## [0.2.7] - 2026-11-23
+
+### Added
+
+- `docs/data_dictionary.md` covering every column in the committed CSV files,
+  with a test that checks the coverage.
+- `docs/reproducibility.md` with the environment, the commands, the data
+  checksum and the determinism rules.
+- `docs/checksums.sha256` with the hashes of the committed figures and tables.
+  The test suite verifies every line. `scripts/update_checksums.py` regenerates
+  the file.
+- Release workflow that builds a wheel and attaches it to the GitHub release for
+  a `v*` tag.
+
+### Changed
+
+- 133 tests and 100% statement coverage.
+- Version bumped to 0.2.7.
+
+### Notes
+
+- No numerical result changes.
+
 ## [0.2.6] - 2026-11-23
 
 ### Added
@@ -16,7 +39,7 @@ follows Keep a Changelog and the project uses semantic versioning.
 
 ### Changed
 
-- 130 tests and 100% statement coverage.
+- 133 tests and 100% statement coverage.
 - Version bumped to 0.2.6.
 
 ### Notes
