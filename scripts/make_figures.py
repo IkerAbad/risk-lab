@@ -146,10 +146,7 @@ def _run(args: argparse.Namespace) -> int:
     def formatter(value: float) -> str:
         return f"{value:.6f}"
 
-    print(
-        f"Full-sample one-day risk at {args.level:.0%} "
-        f"({len(portfolio)} returns)"
-    )
+    print(f"Full-sample one-day risk at {args.level:.0%} ({len(portfolio)} returns)")
     print(full_sample_table.to_string(formatters={"var": formatter, "cvar": formatter}))
     print()
     print(

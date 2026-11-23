@@ -125,12 +125,7 @@ def christoffersen_independence(
     pi = (n01 + n11) / (n00 + n01 + n10 + n11)
 
     log_null = xlogy(n00 + n10, 1.0 - pi) + xlogy(n01 + n11, pi)
-    log_alt = (
-        xlogy(n00, 1.0 - pi01)
-        + xlogy(n01, pi01)
-        + xlogy(n10, 1.0 - pi11)
-        + xlogy(n11, pi11)
-    )
+    log_alt = xlogy(n00, 1.0 - pi01) + xlogy(n01, pi01) + xlogy(n10, 1.0 - pi11) + xlogy(n11, pi11)
     statistic = float(-2.0 * (log_null - log_alt))
     if not np.isfinite(statistic):
         return TestResult(

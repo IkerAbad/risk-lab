@@ -32,7 +32,8 @@ def run(command: list[str]) -> bool:
 def main() -> int:
     commands = [
         [sys.executable, "-m", "ruff", "check", "."],
-        [sys.executable, "-m", "mypy", "src"],
+        [sys.executable, "-m", "ruff", "format", "--check", "."],
+        [sys.executable, "-m", "mypy", "src", "tests", "scripts"],
         [sys.executable, "-m", "bandit", "-r", "src", "scripts", "-q"],
         [
             sys.executable,

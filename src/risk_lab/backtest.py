@@ -66,9 +66,7 @@ def rolling_backtest(
     if window < 2:
         raise ValueError("window must be at least 2")
     if len(returns) <= window:
-        raise ValueError(
-            f"need more than {window} returns, got {len(returns)}"
-        )
+        raise ValueError(f"need more than {window} returns, got {len(returns)}")
     if not 0.0 < float(level) < 1.0:
         raise ValueError("level must be strictly between 0 and 1")
 
@@ -129,9 +127,7 @@ def rolling_backtest(
     return frame
 
 
-def summarize_backtest(
-    backtest: pd.DataFrame, *, level: float = 0.95
-) -> pd.DataFrame:
+def summarize_backtest(backtest: pd.DataFrame, *, level: float = 0.95) -> pd.DataFrame:
     """Build the comparative table of violations and coverage tests."""
     if backtest.empty:
         raise ValueError("backtest is empty")
@@ -177,9 +173,7 @@ def summarize_backtest(
     return pd.DataFrame(rows).set_index("method")
 
 
-def violations_by_year(
-    backtest: pd.DataFrame, *, level: float = 0.95
-) -> pd.DataFrame:
+def violations_by_year(backtest: pd.DataFrame, *, level: float = 0.95) -> pd.DataFrame:
     """Count violations by calendar year for every method in the backtest.
 
     The result is indexed by ``method`` and ``year`` and contains the number
@@ -199,9 +193,7 @@ def violations_by_year(
         if violation_column not in backtest.columns:
             continue
         grouped = backtest.groupby(years)[violation_column].agg(["count", "sum"])
-        grouped = grouped.rename(
-            columns={"count": "observations", "sum": "violations"}
-        )
+        grouped = grouped.rename(columns={"count": "observations", "sum": "violations"})
         grouped["expected"] = grouped["observations"] * (1.0 - float(level))
         grouped["rate"] = grouped["violations"] / grouped["observations"]
         grouped["method"] = method

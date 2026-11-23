@@ -33,9 +33,7 @@ def test_relative_markdown_links_exist():
 
 
 def test_readme_main_table_matches_the_summary_csv():
-    summary = pd.read_csv(
-        ROOT / "docs" / "backtest_summary.csv", index_col="method"
-    )
+    summary = pd.read_csv(ROOT / "docs" / "backtest_summary.csv", index_col="method")
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     for method, label in (
         ("historical", "Historical"),
@@ -49,17 +47,13 @@ def test_readme_main_table_matches_the_summary_csv():
 def test_results_page_99_percent_table_matches_the_sensitivity_csv():
     sensitivity = pd.read_csv(ROOT / "docs" / "sensitivity.csv")
     results = (ROOT / "docs" / "results.md").read_text(encoding="utf-8")
-    subset = sensitivity[
-        (sensitivity["level"] == 0.99) & (sensitivity["window"] == 500)
-    ]
+    subset = sensitivity[(sensitivity["level"] == 0.99) & (sensitivity["window"] == 500)]
     for method, label in (
         ("historical", "Historical"),
         ("parametric", "Parametric"),
         ("monte_carlo", "Monte Carlo"),
     ):
-        violations = int(
-            subset.loc[subset["method"] == method, "violations"].iloc[0]
-        )
+        violations = int(subset.loc[subset["method"] == method, "violations"].iloc[0])
         assert f"| {label} | {violations} |" in results
 
 

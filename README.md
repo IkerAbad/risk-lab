@@ -352,7 +352,8 @@ Run the tests and the static checks:
 ```bash
 python -m pytest -q --cov=risk_lab --cov-report=term-missing
 python -m ruff check .
-python -m mypy src
+python -m ruff format --check .
+python -m mypy src tests scripts
 python -m bandit -r src scripts -q
 ```
 
@@ -456,9 +457,10 @@ against `data/prices.sha256`.
 The main workflow runs the six-job matrix on Ubuntu, Windows and macOS with
 Python 3.12 and 3.14, a minimum-dependency job with numpy 1.26.4, scipy
 1.11.4, pandas 2.1.4 and matplotlib 3.8.4, and a wheel-install job. The
-minimum-dependency test job runs `pytest`. The matrix jobs run `ruff`, `mypy`,
-Bandit and `pytest` with a 99% coverage threshold. CodeQL and dependency review
-run as separate workflows.
+minimum-dependency test job runs `pytest`. The matrix jobs run `ruff check`,
+`ruff format --check`, `mypy` over `src`, `tests` and `scripts`, Bandit and
+`pytest` with a 99% coverage threshold. CodeQL and dependency review run as
+separate workflows.
 
 ## Robustness
 
@@ -474,6 +476,8 @@ run as separate workflows.
   VaR is monotone in the confidence level, the empirical VaR is the negative
   quantile and every p-value is a probability.
 - The package ships a `py.typed` marker, so type checkers use its annotations.
+- `ruff format --check` enforces formatting. `mypy` type-checks `src`, `tests`
+  and `scripts`.
 - Every public function validates its inputs. The estimators reject empty
   arrays, NaN, infinite values, invalid levels and bad weights.
 - The downloader has unit tests with mocked HTTP responses, so Stooq errors,
@@ -487,7 +491,7 @@ run as separate workflows.
 - `scripts/check_all.py` runs the checksum, `ruff`, `mypy`, Bandit and the test
   suite with coverage in one command.
 - Dependabot keeps the GitHub Actions and the Python dependencies current.
-- The repository is versioned with tags. The current release is `v0.2.3`.
+- The repository is versioned with tags. The current release is `v0.2.4`.
 
 ## Limitations
 

@@ -15,9 +15,7 @@ from risk_lab.var import (
     simulate_portfolio_returns,
 )
 
-HAND_RETURNS = np.array(
-    [-0.10, -0.08, -0.06, -0.04, -0.02, 0.00, 0.01, 0.02, 0.03, 0.04]
-)
+HAND_RETURNS = np.array([-0.10, -0.08, -0.06, -0.04, -0.02, 0.00, 0.01, 0.02, 0.03, 0.04])
 
 
 def test_historical_var_matches_empirical_quantile():
@@ -77,12 +75,8 @@ def test_monte_carlo_is_reproducible_with_same_seed():
     )
     weights = np.array([0.5, 0.35, 0.15])
 
-    first = monte_carlo_risk(
-        asset_returns, weights, 0.95, n_scenarios=20_000, seed=123
-    )
-    second = monte_carlo_risk(
-        asset_returns, weights, 0.95, n_scenarios=20_000, seed=123
-    )
+    first = monte_carlo_risk(asset_returns, weights, 0.95, n_scenarios=20_000, seed=123)
+    second = monte_carlo_risk(asset_returns, weights, 0.95, n_scenarios=20_000, seed=123)
     assert first == second
     assert monte_carlo_var(
         asset_returns, weights, 0.95, n_scenarios=20_000, seed=123
@@ -155,9 +149,7 @@ def test_singular_covariance_raises():
 
 def test_simulate_portfolio_returns_single_asset():
     returns = np.array([0.01, -0.02, 0.03, 0.00, -0.01])
-    simulated = simulate_portfolio_returns(
-        returns, [1.0], n_scenarios=100, seed=10
-    )
+    simulated = simulate_portfolio_returns(returns, [1.0], n_scenarios=100, seed=10)
     assert simulated.shape == (100,)
     assert np.isfinite(simulated).all()
 
@@ -179,7 +171,7 @@ def test_monte_carlo_rejects_invalid_scenarios():
     with pytest.raises(ValueError, match="integer"):
         monte_carlo_risk(returns, [1.0], n_scenarios=True)
     with pytest.raises(ValueError, match="integer"):
-        monte_carlo_risk(returns, [1.0], n_scenarios=100.0)
+        monte_carlo_risk(returns, [1.0], n_scenarios=100.0)  # type: ignore[arg-type]
     with pytest.raises(ValueError, match="positive"):
         monte_carlo_risk(returns, [1.0], n_scenarios=0)
 

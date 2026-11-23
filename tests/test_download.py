@@ -8,6 +8,7 @@ import pytest
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "download_data.py"
 spec = importlib.util.spec_from_file_location("download_data", SCRIPT)
+assert spec is not None
 download_data = importlib.util.module_from_spec(spec)
 assert spec.loader is not None
 spec.loader.exec_module(download_data)
@@ -55,15 +56,11 @@ def _fail_stooq(*args, **kwargs) -> pd.Series:
 
 def _install_payload(monkeypatch, payload: dict) -> None:
     raw = json.dumps(payload).encode("utf-8")
-    monkeypatch.setattr(
-        download_data, "_request_with_retry", lambda *args, **kwargs: raw
-    )
+    monkeypatch.setattr(download_data, "_request_with_retry", lambda *args, **kwargs: raw)
 
 
 def test_fetch_stooq_parses_close(monkeypatch):
-    monkeypatch.setattr(
-        download_data, "_request_with_retry", lambda *args, **kwargs: STOOQ_CSV
-    )
+    monkeypatch.setattr(download_data, "_request_with_retry", lambda *args, **kwargs: STOOQ_CSV)
     series = download_data.fetch_stooq("SPY", date(2024, 1, 2), date(2024, 1, 3))
     assert series.name == "SPY"
     assert series.tolist() == [100.0, 101.0]
@@ -81,18 +78,14 @@ def test_fetch_stooq_rejects_non_csv(monkeypatch):
 
 def test_fetch_stooq_rejects_missing_close(monkeypatch):
     raw = b"Date,Open\n2024-01-02,100\n"
-    monkeypatch.setattr(
-        download_data, "_request_with_retry", lambda *args, **kwargs: raw
-    )
+    monkeypatch.setattr(download_data, "_request_with_retry", lambda *args, **kwargs: raw)
     with pytest.raises(download_data.DownloadError, match="no Close"):
         download_data.fetch_stooq("SPY", date(2024, 1, 2), date(2024, 1, 3))
 
 
 def test_fetch_stooq_rejects_empty_data(monkeypatch):
     raw = b"Date,Close\n"
-    monkeypatch.setattr(
-        download_data, "_request_with_retry", lambda *args, **kwargs: raw
-    )
+    monkeypatch.setattr(download_data, "_request_with_retry", lambda *args, **kwargs: raw)
     with pytest.raises(download_data.DownloadError, match="no rows"):
         download_data.fetch_stooq("SPY", date(2024, 1, 2), date(2024, 1, 3))
 
@@ -133,13 +126,7 @@ def test_fetch_yahoo_rejects_missing_timestamp(monkeypatch):
 
 
 def test_fetch_yahoo_rejects_missing_price_data(monkeypatch):
-    payload = {
-        "chart": {
-            "result": [
-                {"timestamp": [1_704_153_600], "indicators": {}}
-            ]
-        }
-    }
+    payload = {"chart": {"result": [{"timestamp": [1_704_153_600], "indicators": {}}]}}
     _install_payload(monkeypatch, payload)
     with pytest.raises(download_data.DownloadError, match="no price data"):
         download_data.fetch_yahoo("SPY", date(2024, 1, 2), date(2024, 1, 3))
@@ -164,9 +151,7 @@ def test_fetch_yahoo_rejects_all_missing_values(monkeypatch):
 def test_build_frame_falls_back_to_yahoo(monkeypatch):
     monkeypatch.setattr(download_data, "fetch_stooq", _fail_stooq)
     monkeypatch.setattr(download_data, "fetch_yahoo", _fake_yahoo)
-    frame, source = download_data._build_frame(
-        date(2024, 1, 2), date(2024, 1, 3), "auto"
-    )
+    frame, source = download_data._build_frame(date(2024, 1, 2), date(2024, 1, 3), "auto")
     assert source == "Yahoo Finance adjusted close"
     assert list(frame.columns) == ["SPY", "TLT", "GLD"]
     assert len(frame) == 2

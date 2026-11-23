@@ -3,6 +3,21 @@
 All notable changes to this project are documented in this file. The format
 follows Keep a Changelog and the project uses semantic versioning.
 
+## [0.2.4] - 2026-11-23
+
+### Changed
+
+- Applied Ruff formatting to the whole codebase.
+- CI and `scripts/check_all.py` now run `ruff format --check`.
+- `mypy` now checks `src`, `tests` and `scripts` instead of only `src`.
+- Fixed the type annotations in the script-loading test helpers.
+- 122 tests and 99.52% statement coverage.
+- Version bumped to 0.2.4.
+
+### Notes
+
+- No numerical result changes.
+
 ## [0.2.3] - 2026-11-23
 
 ### Added

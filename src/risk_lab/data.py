@@ -55,9 +55,7 @@ def compute_returns(prices: pd.DataFrame, *, log_returns: bool = False) -> pd.Da
     return returns.dropna(how="any")
 
 
-def weights_vector(
-    columns: Sequence[str], weights: Mapping[str, float]
-) -> np.ndarray:
+def weights_vector(columns: Sequence[str], weights: Mapping[str, float]) -> np.ndarray:
     """Return the portfolio weights in the same order as ``columns``."""
     missing = [column for column in columns if column not in weights]
     if missing:
@@ -74,9 +72,7 @@ def weights_vector(
     return vector
 
 
-def portfolio_returns(
-    returns: pd.DataFrame, weights: Mapping[str, float]
-) -> pd.Series:
+def portfolio_returns(returns: pd.DataFrame, weights: Mapping[str, float]) -> pd.Series:
     """Weighted portfolio returns with fixed weights and daily rebalancing.
 
     The portfolio return on day t is R_p,t = sum_i w_i * R_i,t.

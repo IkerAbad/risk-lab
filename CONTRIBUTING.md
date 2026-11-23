@@ -15,11 +15,15 @@ Run the full local check before opening a pull request:
 ```bash
 python -m pytest -q --cov=risk_lab --cov-report=term-missing
 python -m ruff check .
-python -m mypy src
+python -m ruff format --check .
+python -m mypy src tests scripts
 python -m bandit -r src scripts -q
 ```
 
 Or run the whole gate with `python scripts/check_all.py`.
+
+If `ruff format --check` fails, run `python -m ruff format .` and commit the
+result.
 
 The CI runs the same checks on Ubuntu, Windows and macOS with Python 3.12 and
 3.14. The main workflow also has a minimum-dependency job and a wheel job. A

@@ -47,9 +47,7 @@ def _validate_weights(weights: Sequence[float] | np.ndarray, n_assets: int) -> n
     if vector.ndim != 1:
         raise ValueError("weights must be one-dimensional")
     if vector.size != n_assets:
-        raise ValueError(
-            f"expected {n_assets} weights, got {vector.size}"
-        )
+        raise ValueError(f"expected {n_assets} weights, got {vector.size}")
     if not np.isfinite(vector).all():
         raise ValueError("weights must be finite")
     if (vector < 0).any():
@@ -60,9 +58,7 @@ def _validate_weights(weights: Sequence[float] | np.ndarray, n_assets: int) -> n
     return vector
 
 
-def historical_risk(
-    returns: Sequence[float] | np.ndarray, level: float = 0.95
-) -> RiskEstimate:
+def historical_risk(returns: Sequence[float] | np.ndarray, level: float = 0.95) -> RiskEstimate:
     """Empirical VaR and CVaR.
 
     VaR = -Q_{1-level}(R), where Q is the empirical quantile with linear
@@ -76,23 +72,17 @@ def historical_risk(
     return RiskEstimate(var=-quantile, cvar=float(-tail.mean()))
 
 
-def historical_var(
-    returns: Sequence[float] | np.ndarray, level: float = 0.95
-) -> float:
+def historical_var(returns: Sequence[float] | np.ndarray, level: float = 0.95) -> float:
     """Empirical one-day VaR as a positive loss."""
     return historical_risk(returns, level).var
 
 
-def historical_cvar(
-    returns: Sequence[float] | np.ndarray, level: float = 0.95
-) -> float:
+def historical_cvar(returns: Sequence[float] | np.ndarray, level: float = 0.95) -> float:
     """Empirical one-day CVaR as a positive loss."""
     return historical_risk(returns, level).cvar
 
 
-def parametric_risk(
-    returns: Sequence[float] | np.ndarray, level: float = 0.95
-) -> RiskEstimate:
+def parametric_risk(returns: Sequence[float] | np.ndarray, level: float = 0.95) -> RiskEstimate:
     """Normal VaR and CVaR from the sample mean and sample standard deviation.
 
     With mu and sigma estimated with ``ddof=1`` and z = Phi^{-1}(1 - level):
@@ -112,16 +102,12 @@ def parametric_risk(
     return RiskEstimate(var=float(var), cvar=float(cvar))
 
 
-def parametric_var(
-    returns: Sequence[float] | np.ndarray, level: float = 0.95
-) -> float:
+def parametric_var(returns: Sequence[float] | np.ndarray, level: float = 0.95) -> float:
     """Normal one-day VaR as a positive loss."""
     return parametric_risk(returns, level).var
 
 
-def parametric_cvar(
-    returns: Sequence[float] | np.ndarray, level: float = 0.95
-) -> float:
+def parametric_cvar(returns: Sequence[float] | np.ndarray, level: float = 0.95) -> float:
     """Normal one-day CVaR as a positive loss."""
     return parametric_risk(returns, level).cvar
 
@@ -163,9 +149,7 @@ def simulate_portfolio_returns(
     try:
         cholesky = np.linalg.cholesky(covariance)
     except np.linalg.LinAlgError as exc:
-        raise ValueError(
-            "the covariance matrix is not positive definite"
-        ) from exc
+        raise ValueError("the covariance matrix is not positive definite") from exc
 
     rng = np.random.default_rng(seed)
     shocks = rng.standard_normal((n_scenarios, values.shape[1]))

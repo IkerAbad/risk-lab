@@ -41,20 +41,14 @@ def test_rolling_backtest_does_not_use_future_returns():
     values = rng.normal(0.0, 0.01, size=40)
     returns = _single_asset(values)
 
-    first = rolling_backtest(
-        returns, {"A": 1.0}, window=5, methods=("historical",)
-    )
+    first = rolling_backtest(returns, {"A": 1.0}, window=5, methods=("historical",))
 
     changed = returns.copy()
     changed.iloc[-1, 0] = changed.iloc[-1, 0] + 0.50
-    second = rolling_backtest(
-        changed, {"A": 1.0}, window=5, methods=("historical",)
-    )
+    second = rolling_backtest(changed, {"A": 1.0}, window=5, methods=("historical",))
 
     pd.testing.assert_frame_equal(first.iloc[:-1], second.iloc[:-1])
-    assert first["var_historical"].iloc[-1] == pytest.approx(
-        second["var_historical"].iloc[-1]
-    )
+    assert first["var_historical"].iloc[-1] == pytest.approx(second["var_historical"].iloc[-1])
 
 
 def test_summary_table_counts_and_expected_values():
@@ -93,9 +87,7 @@ def test_summary_table_counts_and_expected_values():
 
 
 def test_violations_by_year_counts():
-    index = pd.to_datetime(
-        ["2024-12-30", "2024-12-31", "2025-01-02", "2025-01-03"]
-    )
+    index = pd.to_datetime(["2024-12-30", "2024-12-31", "2025-01-02", "2025-01-03"])
     backtest = pd.DataFrame(
         {
             "violation_historical": [True, False, True, True],

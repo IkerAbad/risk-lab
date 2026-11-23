@@ -60,9 +60,7 @@ def test_load_prices_roundtrip(tmp_path):
     )
     prices = load_prices(path)
     assert list(prices.columns) == ["SPY", "TLT"]
-    assert list(prices.index) == list(
-        pd.to_datetime(["2024-01-02", "2024-01-04"])
-    )
+    assert list(prices.index) == list(pd.to_datetime(["2024-01-02", "2024-01-04"]))
     assert prices.loc["2024-01-02", "SPY"] == 100.0
 
 
@@ -131,13 +129,9 @@ def test_committed_price_snapshot_is_intact():
 
 
 def test_checksum_is_documented_in_the_repository():
-    checksum = (ROOT / "data" / "prices.sha256").read_text(
-        encoding="utf-8"
-    ).split()[0]
+    checksum = (ROOT / "data" / "prices.sha256").read_text(encoding="utf-8").split()[0]
     assert checksum in (ROOT / "README.md").read_text(encoding="utf-8")
-    assert checksum in (ROOT / "docs" / "methodology.md").read_text(
-        encoding="utf-8"
-    )
+    assert checksum in (ROOT / "docs" / "methodology.md").read_text(encoding="utf-8")
 
 
 def test_load_prices_rejects_empty_file(tmp_path):

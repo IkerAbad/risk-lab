@@ -83,9 +83,7 @@ def fetch_stooq(ticker: str, start: date, end: date) -> pd.Series:
 
 def fetch_yahoo(ticker: str, start: date, end: date) -> pd.Series:
     """Fetch one ticker from Yahoo Finance, using adjusted close."""
-    period1 = int(
-        datetime.combine(start, datetime.min.time(), tzinfo=timezone.utc).timestamp()
-    )
+    period1 = int(datetime.combine(start, datetime.min.time(), tzinfo=timezone.utc).timestamp())
     period2 = int(
         datetime.combine(
             end + timedelta(days=1), datetime.min.time(), tzinfo=timezone.utc
@@ -164,9 +162,7 @@ def _build_frame(
         used_source = "Yahoo Finance adjusted close"
 
     frame = pd.DataFrame(series).dropna(how="any").sort_index()
-    frame = frame.loc[
-        (frame.index >= pd.Timestamp(start)) & (frame.index <= pd.Timestamp(end))
-    ]
+    frame = frame.loc[(frame.index >= pd.Timestamp(start)) & (frame.index <= pd.Timestamp(end))]
     if len(frame) < 2:
         raise DownloadError("fewer than two complete rows after alignment")
     if frame.isna().any().any():

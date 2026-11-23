@@ -115,9 +115,7 @@ def test_portfolio_returns_are_linear_in_weights(values, mix):
     returns = pd.DataFrame([values], columns=["A", "B", "C"])
     first = {"A": 0.5, "B": 0.3, "C": 0.2}
     second = {"A": 0.1, "B": 0.6, "C": 0.3}
-    mixed = {
-        key: mix * first[key] + (1.0 - mix) * second[key] for key in first
-    }
+    mixed = {key: mix * first[key] + (1.0 - mix) * second[key] for key in first}
     expected = (
         mix * portfolio_returns(returns, first).iloc[0]
         + (1.0 - mix) * portfolio_returns(returns, second).iloc[0]
@@ -156,9 +154,7 @@ def test_portfolio_returns_are_linear_in_weights(values, mix):
 def test_load_prices_roundtrip(tmp_path, values_a, values_b):
     length = min(len(values_a), len(values_b))
     dates = pd.bdate_range("2024-01-02", periods=length)
-    frame = pd.DataFrame(
-        {"A": values_a[:length], "B": values_b[:length]}, index=dates
-    )
+    frame = pd.DataFrame({"A": values_a[:length], "B": values_b[:length]}, index=dates)
     frame.index.name = "Date"
     path = tmp_path / "prices.csv"
     frame.to_csv(path)

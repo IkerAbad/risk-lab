@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def _load_script(name: str):
     path = ROOT / "scripts" / f"{name}.py"
     spec = importlib.util.spec_from_file_location(name, path)
+    assert spec is not None
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)
@@ -27,9 +28,7 @@ data_quality = _load_script("data_quality")
 def _write_prices(path: Path) -> None:
     rng = np.random.default_rng(1)
     dates = pd.bdate_range("2024-01-02", periods=120)
-    values = 100.0 * np.cumprod(
-        1.0 + rng.normal(0.0005, 0.01, size=(120, 3)), axis=0
-    )
+    values = 100.0 * np.cumprod(1.0 + rng.normal(0.0005, 0.01, size=(120, 3)), axis=0)
     frame = pd.DataFrame(values, index=dates, columns=["SPY", "TLT", "GLD"])
     frame.index.name = "Date"
     frame.to_csv(path, float_format="%.6f")
@@ -174,9 +173,7 @@ def test_data_quality_end_to_end(tmp_path):
     docs = tmp_path / "docs"
     _write_prices(data)
 
-    code = data_quality.main(
-        ["--data", str(data), "--docs", str(docs)]
-    )
+    code = data_quality.main(["--data", str(data), "--docs", str(docs)])
 
     assert code == 0
     report = (docs / "data_quality.md").read_text(encoding="utf-8")
