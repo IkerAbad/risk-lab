@@ -632,10 +632,7 @@ def _run(args: argparse.Namespace) -> int:
         float_format="%.8f",
         lineterminator="\n",
     )
-    main_comparison = canonical_main.join(
-        fresh_main,
-        suffixes=("_snapshot", "_fresh"),
-    )
+    main_comparison = canonical_main.add_suffix("_snapshot").join(fresh_main.add_suffix("_fresh"))
     main_comparison.to_csv(
         args.out / "main_comparison.csv",
         float_format="%.8f",
