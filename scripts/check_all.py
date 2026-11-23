@@ -43,6 +43,7 @@ def main() -> int:
             "--cov=risk_lab",
             "--cov-report=term-missing",
         ],
+        [sys.executable, str(ROOT / "scripts" / "mutation_smoke.py")],
     ]
     results = [verify_checksum()]
     for command in commands:

@@ -18,6 +18,7 @@ python -m ruff check .
 python -m ruff format --check .
 python -m mypy src tests scripts
 python -m bandit -r src scripts -q
+python scripts/mutation_smoke.py
 ```
 
 Or run the whole gate with `python scripts/check_all.py`.
@@ -25,10 +26,13 @@ Or run the whole gate with `python scripts/check_all.py`.
 If `ruff format --check` fails, run `python -m ruff format .` and commit the
 result.
 
+Optional: install the local hooks with `python -m pre_commit install`. The hooks
+run `ruff check`, `ruff format --check`, `mypy` and Bandit before each commit.
+
 The CI runs the same checks on Ubuntu, Windows and macOS with Python 3.12 and
-3.14. The main workflow also has a minimum-dependency job and a wheel job. A
-pull request is ready when all eight jobs pass. CodeQL and dependency review
-run on pull requests as separate workflows.
+3.14. The main workflow also has a minimum-dependency job, a wheel job and a
+mutation job. A pull request is ready when all nine jobs pass. CodeQL and
+dependency review run on pull requests as separate workflows.
 
 ## Code style
 

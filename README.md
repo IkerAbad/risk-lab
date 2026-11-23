@@ -36,13 +36,15 @@ risk-lab/
 │   ├── make_figures.py
 │   ├── make_extended_analysis.py
 │   ├── data_quality.py
+│   ├── mutation_smoke.py
 │   └── check_all.py
 ├── src/risk_lab/
 │   ├── data.py
 │   ├── var.py
 │   ├── backtest.py
 │   ├── stats.py
-│   └── plots.py
+│   ├── plots.py
+│   └── py.typed
 ├── tests/
 │   ├── test_data.py
 │   ├── test_var.py
@@ -59,7 +61,9 @@ risk-lab/
 │   │   ├── ci.yml
 │   │   ├── codeql.yml
 │   │   └── dependency-review.yml
+│   ├── CODEOWNERS
 │   └── dependabot.yml
+├── .pre-commit-config.yaml
 ├── pyproject.toml
 ├── README.md
 ├── CONTRIBUTING.md
@@ -363,6 +367,20 @@ Or run the whole gate with one command:
 python scripts/check_all.py
 ```
 
+The gate includes a small mutation smoke test. Run it alone with:
+
+```bash
+python scripts/mutation_smoke.py
+```
+
+Optional: install the local Git hooks. They run `ruff check`, `ruff format
+--check`, `mypy` and Bandit before each commit.
+
+```bash
+python -m pre_commit install
+python -m pre_commit run --all-files
+```
+
 Regenerate the figures and main tables from the committed CSV:
 
 ```bash
@@ -421,7 +439,7 @@ return, the three VaR and CVaR estimates, and the three violation flags.
 
 ## Tests
 
-The suite has 122 tests, grouped by module and by script:
+The suite has 127 tests, grouped by module and by script:
 
 - `tests/test_data.py`: price validation, simple and log returns, weighted
   portfolio returns, weight validation and the committed snapshot checksum.
@@ -435,18 +453,21 @@ The suite has 122 tests, grouped by module and by script:
   undefined-state behaviour.
 - `tests/test_backtest.py`: no lookahead, the violation flag, summary counts,
   the Monte Carlo path, yearly violation counts and argument validation.
-- `tests/test_plots.py`: both figures are written, missing methods are skipped
-  and missing columns are rejected.
+- `tests/test_plots.py`: both figures are written, saved images are valid PNGs,
+  missing methods are skipped and missing columns are rejected.
 - `tests/test_download.py`: Stooq and Yahoo parsing with mocked HTTP responses,
-  fallback behaviour, malformed payloads and the command-line error path.
+  fallback behaviour, malformed payloads, the automatic fallback through the
+  CLI and the command-line error path.
 - `tests/test_scripts.py`: end-to-end runs of the scripts on synthetic data,
-  the data quality report and clean error handling when the input file is
-  missing.
+  the data quality report, the data quality CLI defaults and clean error
+  handling when the input file is missing.
 - `tests/test_properties.py`: Hypothesis checks for CVaR >= VaR, monotonicity
   in the confidence level, the empirical quantile identity, p-value ranges,
   portfolio linearity and a CSV roundtrip.
 - `tests/test_packaging.py`: version consistency across `pyproject.toml`, the
-  package, `CITATION.cff` and `CHANGELOG.md`, plus the `py.typed` marker.
+  package, `README.md`, `CITATION.cff` and `CHANGELOG.md`, the `py.typed`
+  marker, the `__all__` exports, the public docstrings and the API reference
+  coverage.
 - `tests/test_docs.py`: relative Markdown links and consistency between the
   README tables, `docs/results.md` and the committed CSV files.
 
@@ -459,14 +480,15 @@ Python 3.12 and 3.14, a minimum-dependency job with numpy 1.26.4, scipy
 1.11.4, pandas 2.1.4 and matplotlib 3.8.4, and a wheel-install job. The
 minimum-dependency test job runs `pytest`. The matrix jobs run `ruff check`,
 `ruff format --check`, `mypy` over `src`, `tests` and `scripts`, Bandit and
-`pytest` with a 99% coverage threshold. CodeQL and dependency review run as
-separate workflows.
+`pytest` with a 99% coverage threshold. A mutation job runs five source
+mutations and checks that the suite catches all of them. CodeQL and dependency
+review run as separate workflows.
 
 ## Robustness
 
 - The committed CSV is checked against `data/prices.sha256` by the test suite.
   A corrupted or accidentally regenerated snapshot fails the tests.
-- The suite has 122 tests and 99.5% statement coverage of `src/risk_lab`. CI
+- The suite has 127 tests and 99.5% statement coverage of `src/risk_lab`. CI
   enforces a 99% threshold.
 - A minimum-dependency CI job checks the declared lower bounds: numpy 1.26.4,
   scipy 1.11.4, pandas 2.1.4 and matplotlib 3.8.4 on Python 3.12.
@@ -490,8 +512,13 @@ separate workflows.
   review runs on every pull request.
 - `scripts/check_all.py` runs the checksum, `ruff`, `mypy`, Bandit and the test
   suite with coverage in one command.
+- `scripts/mutation_smoke.py` checks that the suite catches five source
+  mutations: sign errors, the quantile level, the p-value tail and the
+  violation comparison.
+- The repository has a local `pre-commit` configuration for `ruff`, `ruff
+  format`, `mypy` and Bandit.
 - Dependabot keeps the GitHub Actions and the Python dependencies current.
-- The repository is versioned with tags. The current release is `v0.2.4`.
+- The repository is versioned with tags. The current release is `v0.2.5`.
 
 ## Limitations
 
@@ -591,10 +618,10 @@ asintóticos tienen poca potencia en muestras pequeñas. No se maquillan los
 resultados: a 95% y 500 días los tres métodos fallan la independencia, y a 99%
 el modelo normal falla Kupiec.
 
-Robustez: 122 tests, 99,5% de cobertura, tests de propiedades, comprobación
+Robustez: 127 tests, 99,5% de cobertura, tests de propiedades, comprobación
 del checksum del CSV, informe de calidad de datos, paquete con `py.typed`, CI
 en Ubuntu, Windows y macOS con Python 3.12 y 3.14, job de versiones mínimas,
-wheel instalada, CodeQL, ruff, mypy, bandit y Dependabot.
+wheel instalada, mutaciones, CodeQL, ruff, mypy, bandit y Dependabot.
 
 Para reproducir todo:
 

@@ -54,6 +54,21 @@ def test_plot_rolling_var_skips_missing_methods(tmp_path):
     plt.close(fig)
 
 
+def test_saved_figures_are_valid_pngs(tmp_path):
+    backtest = _fake_backtest()
+    for name, function in (
+        ("fig1.png", plot_returns_with_violations),
+        ("fig2.png", plot_rolling_var),
+    ):
+        path = tmp_path / name
+        fig = function(backtest, path=path)
+        image = plt.imread(path)
+        assert image.ndim == 3
+        assert image.shape[0] > 100
+        assert image.shape[1] > 100
+        plt.close(fig)
+
+
 def test_plot_returns_rejects_unknown_method():
     backtest = _fake_backtest()
     with pytest.raises(ValueError, match="unknown method"):

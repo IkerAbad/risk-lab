@@ -3,6 +3,29 @@
 All notable changes to this project are documented in this file. The format
 follows Keep a Changelog and the project uses semantic versioning.
 
+## [0.2.5] - 2026-11-23
+
+### Added
+
+- `scripts/mutation_smoke.py` with five source mutations: historical VaR sign,
+  historical CVaR sign, empirical quantile level, p-value tail and the
+  violation comparison.
+- Mutation smoke job in CI and in `scripts/check_all.py`.
+- Local `pre-commit` configuration for `ruff check`, `ruff format --check`,
+  `mypy` and Bandit.
+- `CODEOWNERS`.
+- Tests for the API reference coverage, the README version, PNG validity and
+  the downloader automatic fallback through the CLI.
+
+### Changed
+
+- 127 tests and 99.52% statement coverage.
+- Version bumped to 0.2.5.
+
+### Notes
+
+- No numerical result changes.
+
 ## [0.2.4] - 2026-11-23
 
 ### Changed

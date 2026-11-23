@@ -255,3 +255,24 @@ def test_parse_args_defaults():
 def test_parse_args_accepts_a_source():
     args = download_data.parse_args(["--source", "yahoo"])
     assert args.source == "yahoo"
+
+
+def test_main_uses_the_auto_fallback(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(download_data, "fetch_stooq", _fail_stooq)
+    monkeypatch.setattr(download_data, "fetch_yahoo", _fake_yahoo)
+    out = tmp_path / "prices.csv"
+    code = download_data.main(
+        [
+            "--source",
+            "auto",
+            "--start",
+            "2024-01-02",
+            "--end",
+            "2024-01-03",
+            "--out",
+            str(out),
+        ]
+    )
+    assert code == 0
+    assert out.exists()
+    assert "Stooq unavailable" in capsys.readouterr().err

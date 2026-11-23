@@ -168,6 +168,12 @@ def test_check_all_verifies_the_committed_checksum(capsys):
     assert "checksum: OK" in capsys.readouterr().out
 
 
+def test_data_quality_parse_args_defaults():
+    args = data_quality.parse_args([])
+    assert args.data.name == "prices.csv"
+    assert args.docs.name == "docs"
+
+
 def test_data_quality_end_to_end(tmp_path):
     data = tmp_path / "prices.csv"
     docs = tmp_path / "docs"

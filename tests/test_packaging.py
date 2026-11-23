@@ -44,3 +44,16 @@ def test_public_functions_and_classes_have_docstrings():
         obj = getattr(risk_lab, name)
         if inspect.isfunction(obj) or inspect.isclass(obj):
             assert inspect.getdoc(obj), f"{name} has no docstring"
+
+
+def test_readme_mentions_the_current_version():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert f"`v{__version__}`" in readme
+
+
+def test_api_reference_covers_the_public_names():
+    reference = (ROOT / "docs" / "api.md").read_text(encoding="utf-8")
+    for name in risk_lab.__all__:
+        obj = getattr(risk_lab, name)
+        if inspect.isfunction(obj) or inspect.isclass(obj):
+            assert name in reference, f"{name} is missing from docs/api.md"
