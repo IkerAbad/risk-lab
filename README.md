@@ -804,7 +804,7 @@ OpenSSF Scorecard run as separate workflows.
 - The repository has a local `pre-commit` configuration for `ruff`, `ruff
   format`, `mypy` and Bandit.
 - Dependabot keeps the GitHub Actions and the Python dependencies current.
-- The repository is versioned with tags. The current version is `v1.1.0`; the
+- The repository is versioned with tags. The current version is `v1.1.2`; the
   latest tagged release is `v1.0.0`.
 
 ## Limitations

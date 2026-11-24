@@ -3,6 +3,14 @@
 All notable changes to this project are documented in this file. The format
 follows Keep a Changelog and the project uses semantic versioning.
 
+## [1.1.2] - 2026-11-24`n`n### Fixed`n`n- `__version__` now matches the distribution version. 1.1.1 shipped with`n  `1.1.0` in the package metadata.`n`n## [1.1.1] - 2026-11-24
+
+### Changed
+
+- Distribution name changed to `var-cvar`. PyPI rejected `risk-lab` as too
+  similar to the unrelated `risklab` package. The import package is still
+  `risk_lab` and the repository is still `risk-lab`.
+
 ## [1.1.0] - 2026-11-23
 
 ### Added
